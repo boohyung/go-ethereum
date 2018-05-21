@@ -1122,11 +1122,19 @@ func SetDashboardConfig(ctx *cli.Context, cfg *dashboard.Config) {
 }
 
 // RegisterEthService adds an Ethereum client to the stack.
-// TODO: service 분석하기
+/*
+geth 바이너리가 실행되면서 노드를 생성후 초기화 하는데,
+노드객체는 기본적으로 서비스들이 등록되는 컨테이너 객체이기 때문에
+ethereum 프로토콜도 역시 서비스 추가 된다.
+초기화가 완료된 노드가 start하면서 본인에게 등록된 모든 서비스를 시작하게 된다.
+이때 config파일의 sync 모드에 따라 Light Sync인지 아닌지(Full sync)를 구별한다.
+*/
 func RegisterEthService(stack *node.Node, cfg *eth.Config) {
 	var err error
 	if cfg.SyncMode == downloader.LightSync {
 		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+			//light ethereum service를 생성함
+			//les/backend.go 참조
 			return les.New(ctx, cfg)
 		})
 	} else {

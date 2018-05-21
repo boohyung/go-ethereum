@@ -75,7 +75,10 @@ type LightChain struct {
 // NewLightChain returns a fully initialised light chain using information
 // available in the database. It initialises the default Ethereum header
 // validator.
+// DB상의 사용가능한 정보를 활용하여 완전히 초기화된 라이트 체인을 리턴한다.
+// 기본 이더리움 헤더 검증자를 초기화 한다
 func NewLightChain(odr OdrBackend, config *params.ChainConfig, engine consensus.Engine) (*LightChain, error) {
+// Least Recently Used
 	bodyCache, _ := lru.New(bodyCacheLimit)
 	bodyRLPCache, _ := lru.New(bodyCacheLimit)
 	blockCache, _ := lru.New(blockCacheLimit)
@@ -101,10 +104,12 @@ func NewLightChain(odr OdrBackend, config *params.ChainConfig, engine consensus.
 	if cp, ok := trustedCheckpoints[bc.genesisBlock.Hash()]; ok {
 		bc.addTrustedCheckpoint(cp)
 	}
+	//이더리움은 스테이트 머신이므로 마지막 스테이트를 가지고 온다.
 	if err := bc.loadLastState(); err != nil {
 		return nil, err
 	}
 	// Check the current state of the block hashes and make sure that we do not have any of the bad blocks in our chain
+	//chain 검증
 	for hash := range core.BadHashes {
 		if header := bc.GetHeaderByHash(hash); header != nil {
 			log.Error("Found bad hash, rewinding chain", "number", header.Number, "hash", header.ParentHash)

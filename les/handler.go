@@ -222,6 +222,7 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.maxPeers = maxPeers
 
 	if pm.lightSync {
+		//eth/sync.go
 		go pm.syncer()
 	} else {
 		go func() {

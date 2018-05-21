@@ -151,11 +151,15 @@ func (e *GenesisMismatchError) Error() string {
 //
 // The returned chain configuration is never nil.
 func SetupGenesisBlock(db ethdb.Database, genesis *Genesis) (*params.ChainConfig, common.Hash, error) {
+	//제네시스 블록이 넘어왔을경우 - 일단 패스
 	if genesis != nil && genesis.Config == nil {
 		return params.AllEthashProtocolChanges, common.Hash{}, errGenesisNoConfig
 	}
 
 	// Just commit the new block if there is no stored genesis block.
+	// core/rawdb/accessors_chain.go 참조
+	// db에서 제네시스 블록에 기록되어 있을 캐노니컬 해시를 읽는다.
+	// 제네시스가 없다면 메인넷 블럭을 사용한다. 
 	stored := rawdb.ReadCanonicalHash(db, 0)
 	if (stored == common.Hash{}) {
 		if genesis == nil {
@@ -169,6 +173,7 @@ func SetupGenesisBlock(db ethdb.Database, genesis *Genesis) (*params.ChainConfig
 	}
 
 	// Check whether the genesis block is already written.
+	// 제네시스가 이미 있다면 해당블록의 해시를 체크한다 
 	if genesis != nil {
 		hash := genesis.ToBlock(nil).Hash()
 		if hash != stored {
@@ -177,6 +182,7 @@ func SetupGenesisBlock(db ethdb.Database, genesis *Genesis) (*params.ChainConfig
 	}
 
 	// Get the existing chain configuration.
+	// net의 config가 test net인지 main net인지 체크함.
 	newcfg := genesis.configOrDefault(stored)
 	storedcfg := rawdb.ReadChainConfig(db, stored)
 	if storedcfg == nil {

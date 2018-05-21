@@ -198,6 +198,7 @@ func makeExtraData(extra []byte) []byte {
 
 // CreateDB creates the chain database.
 func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ethdb.Database, error) {
+	//node/service.go 참조
 	db, err := ctx.OpenDatabase(name, config.DatabaseCache, config.DatabaseHandles)
 	if err != nil {
 		return nil, err

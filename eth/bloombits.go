@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
+//블룸필터는 통계적 특성을 가진 자료구조로서,
+//데이터를 줄여서 공간을 효율적으로 빠르게 검색한다
 package eth
 
 import (

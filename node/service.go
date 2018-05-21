@@ -43,6 +43,7 @@ func (ctx *ServiceContext) OpenDatabase(name string, cache int, handles int) (et
 	if ctx.config.DataDir == "" {
 		return ethdb.NewMemDatabase(), nil
 	}
+	//ethdb/database.go 참조
 	db, err := ethdb.NewLDBDatabase(ctx.config.resolvePath(name), cache, handles)
 	if err != nil {
 		return nil, err

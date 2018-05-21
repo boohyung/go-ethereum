@@ -28,6 +28,7 @@ import (
 )
 
 // ReadCanonicalHash retrieves the hash assigned to a canonical block number.
+// 캐노니컬해시(제네시스블록에 써져있을 해시)를 읽는다.
 func ReadCanonicalHash(db DatabaseReader, number uint64) common.Hash {
 	data, _ := db.Get(append(append(headerPrefix, encodeBlockNumber(number)...), headerHashSuffix...))
 	if len(data) == 0 {

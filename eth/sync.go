@@ -131,6 +131,7 @@ func (pm *ProtocolManager) txsyncLoop() {
 
 // syncer is responsible for periodically synchronising with the network, both
 // downloading hashes and blocks as well as handling the announcement handler.
+//주기적으로 네트워크와 동기화 하고, 해시와 블록을 다운로드한다
 func (pm *ProtocolManager) syncer() {
 	// Start and ensure cleanup of sync mechanisms
 	pm.fetcher.Start()
