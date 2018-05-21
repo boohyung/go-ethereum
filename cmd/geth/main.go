@@ -15,9 +15,10 @@
 // along with go-ethereum. If not, see <http://www.gnu.org/licenses/>.
 
 // geth is the official command-line client for Ethereum.
-package main
+package main //go 언어에서 main 패키지로 선언하면 실행파일이 생성된다고 한다
 
 import (
+	//go 시스템 패키지, 코드에서 사용시 어떤 용도로 쓰이는지 업데이트 하자.
 	"fmt"
 	"os"
 	"runtime"
@@ -25,6 +26,8 @@ import (
 	"strings"
 	"time"
 
+	//이더리움 내부 패키지
+	//다른 폴더의 소스코드를 패키지화해서 사용한다
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/cmd/utils"
@@ -35,19 +38,33 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/ethereum/go-ethereum/node"
+
+	//gopkg.in은 stable api라는걸 지원하는데, 정확하진 않지만 github에서 버전별로 패키지를 받아 사용할수 있는것 같다
+	//urfave/cli 패키지는 command line 기반의 go application을 만들기 위해 사용되는 패키지.
+	//지원하는 기능은 콘솔창, 입력된 커맨드 파싱 및 콜백함수, 설정파일 읽어 변수초기화 하기 등등
 	"gopkg.in/urfave/cli.v1"
 )
 
 const (
+	//go에서 상수를 선언할때 괄호로 묶어서 사용한 케이스
+	//타입이 명시적이지 않으면 자동으로 타입 추론
+	//const clientIdentifier string = "geth" 랑 같음
 	clientIdentifier = "geth" // Client identifier to advertise over the network
 )
 
 var (
+	//go에서 변수를 묶어서 선언함
+
 	// Git SHA1 commit hash of the release (set via linker flags)
 	gitCommit = ""
 	// The app that holds all commands and flags.
+	//utils패키지의 NewApp함수를 사용한다. 해당함수는 utils/flags.go에 선언되어 있음. 리턴값은 cli.App* 이고 내부적으로 cli.NewApp을 호출함
+	//cli패키지는 urfave 주석의 내용대로 커맨드라인 app을 만들기 위한 helper
 	app = utils.NewApp(gitCommit, "the go-ethereum command line interface")
 	// flags that configure the node
+	// cli의 Flag type형태 배열을 선언함 
+	// 내부적으로는 string, bool, directory 내용들이 섞여 있음
+	// util의 flags.go에 실제 cli의 flag type선언 참조
 	nodeFlags = []cli.Flag{
 		utils.IdentityFlag,
 		utils.UnlockedAccountFlag,
@@ -144,10 +161,12 @@ var (
 
 func init() {
 	// Initialize the CLI app and start Geth
-	app.Action = geth
+
+	app.Action = geth //app이 생성될때 불리우는 main함수.
 	app.HideVersion = true // we have a command to print the version
 	app.Copyright = "Copyright 2013-2018 The go-ethereum Authors"
-	app.Commands = []cli.Command{
+	app.Commands = []cli.Command{ //app에서 지원할 command들
+	//TODO:각 커맨드에 대한 내용 추가
 		// See chaincmd.go:
 		initCommand,
 		importCommand,
@@ -175,6 +194,7 @@ func init() {
 		// See config.go
 		dumpConfigCommand,
 	}
+	//TODO:정렬을 왜하지?
 	sort.Sort(cli.CommandsByName(app.Commands))
 
 	app.Flags = append(app.Flags, nodeFlags...)
@@ -183,17 +203,28 @@ func init() {
 	app.Flags = append(app.Flags, debug.Flags...)
 	app.Flags = append(app.Flags, whisperFlags...)
 
+	//Before는 sub command가 실행되기 전 불리우는 함수
+	//모든 명령어를 실행하기전 카운터와 가스 리밋값을 설정한다.
 	app.Before = func(ctx *cli.Context) error {
+		//go의 멀티cpu지원 - not multi-thread
 		runtime.GOMAXPROCS(runtime.NumCPU())
 		if err := debug.Setup(ctx); err != nil {
 			return err
 		}
 		// Start system runtime metrics collection
+		//3초간 동작중인 프로세스의 다양한 메트릭을 수집하여
+		//Counter나 Gauge형태로 사용하는것 같다
+		//TODO:어떤 용도로 쓰는지는 차후확인
+		//metics/metrics.go 파일을 참조
 		go metrics.CollectProcessMetrics(3 * time.Second)
 
+		//네트워크를 셋업한다
+		//TargetGasLimit값을 설정함
+		//utils/flags.go
 		utils.SetupNetwork(ctx)
 		return nil
 	}
+	//Before는 sub command가 실행된 후 불리우는 함수
 
 	app.After = func(ctx *cli.Context) error {
 		debug.Exit()
@@ -203,6 +234,7 @@ func init() {
 }
 
 func main() {
+	//cli app을 실행한다. 당연히 action에 해당하는 geth함수가 불릴것.
 	if err := app.Run(os.Args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -213,7 +245,18 @@ func main() {
 // It creates a default node based on the command line arguments and runs it in
 // blocking mode, waiting for it to be shut down.
 func geth(ctx *cli.Context) error {
+	//config.go에 정의됨
+	//makeFullNode 에선 아래와 같은 순서로 노드를 초기화함
+	//makeConfigNode
+		//노드생성 - 노드는 서비스들이 등록될수 있는 컨테이너
+		//node config - p2p, ipc, http, WebSocket(ws), Node Userident
+		//eth config - 이더베이스(account), gas price(gpo), txpool, ethash
+	//RegisterEthService - 노드스택에 full 혹은 light ethereum 서비스를 등록
+	//registerDashboardSurf - 이더리움의 data visualizer인 대시보드 서비스를 붙인다 
+	//enableWhisper - 최소 1개의 whisper flag가 있다면 enable 
+	//registerEthStatsService -URL이 있을경우 이더 stat daemon에 등록한다
 	node := makeFullNode(ctx)
+	//노드 시작
 	startNode(ctx, node)
 	node.Wait()
 	return nil
@@ -226,9 +269,16 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 	debug.Memsize.Add("node", stack)
 
 	// Start up the node itself
+	// node/node.go
+	// 노드가 실행되면 p2p서버를 초기화 하고 
+	// 노드에 등록했던 서비스프로토콜을 실행한다
+	// RPC실행(admin, debug, web3)
+	// 인터럽트를 기다려 node를 종료시키는 스레드 동시실행
 	utils.StartNode(stack)
 
 	// Unlock any account specifically requested
+	// keystore를 참조하여 account를 언락한다
+	//TODO: 키스토어 관련 좀더 분석할것
 	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 
 	passwords := utils.MakePasswordList(ctx)
@@ -244,6 +294,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 
 	go func() {
 		// Create a chain state reader for self-derivation
+		// 체인정보를 읽는 rpcClient
 		rpcClient, err := stack.Attach()
 		if err != nil {
 			utils.Fatalf("Failed to attach to self: %v", err)
@@ -251,6 +302,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		stateReader := ethclient.NewClient(rpcClient)
 
 		// Open any wallets already attached
+		// 등록된 지갑들을 open한다.
 		for _, wallet := range stack.AccountManager().Wallets() {
 			if err := wallet.Open(""); err != nil {
 				log.Warn("Failed to open wallet", "url", wallet.URL(), "err", err)
@@ -300,6 +352,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		}
 		// Set the gas price to the limits from the CLI and start mining
 		ethereum.TxPool().SetGasPrice(utils.GlobalBig(ctx, utils.GasPriceFlag.Name))
+		//mining시작
 		if err := ethereum.StartMining(true); err != nil {
 			utils.Fatalf("Failed to start mining: %v", err)
 		}

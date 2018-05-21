@@ -111,6 +111,7 @@ func NewApp(gitCommit, usage string) *cli.App {
 // The flags are defined here so their names and help texts
 // are the same for all commands.
 
+//main.go에서 사용하는 flag의 정의
 var (
 	// General settings
 	DataDirFlag = DirectoryFlag{
@@ -1121,6 +1122,7 @@ func SetDashboardConfig(ctx *cli.Context, cfg *dashboard.Config) {
 }
 
 // RegisterEthService adds an Ethereum client to the stack.
+// TODO: service 분석하기
 func RegisterEthService(stack *node.Node, cfg *eth.Config) {
 	var err error
 	if cfg.SyncMode == downloader.LightSync {
@@ -1144,6 +1146,7 @@ func RegisterEthService(stack *node.Node, cfg *eth.Config) {
 
 // RegisterDashboardService adds a dashboard to the stack.
 func RegisterDashboardService(stack *node.Node, cfg *dashboard.Config, commit string) {
+	//registerDashboardSurf - 이더리움의 data visualizer인 대시보드를 붙인다 
 	stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		return dashboard.New(cfg, commit)
 	})
