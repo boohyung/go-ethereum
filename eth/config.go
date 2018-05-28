@@ -34,6 +34,10 @@ import (
 )
 
 // DefaultConfig contains default settings for use on the Ethereum main net.
+// 이더리움 기본설정
+// fast sync모드
+// txPool도 기본설정사용
+// 가스 신탁 설정
 var DefaultConfig = Config{
 	SyncMode: downloader.FastSync,
 	Ethash: ethash.Config{

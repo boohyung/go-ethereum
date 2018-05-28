@@ -97,6 +97,16 @@ func loadConfig(file string, cfg *gethConfig) error {
 	return err
 }
 
+// client 식별자
+// http 모듈에 eth/shh 추가
+// Websocket 모듈에 eth/shh 추가
+// DefaultConfig contains reasonable default settings.
+// data 위치설정
+// http 포트 설정
+// http 모듈에 net, web3 설정
+// websocket 모듈에 net,web3설정
+// p2p 설정: max peer는 25개
+// any 함수는 로컬 네트워크의 지원가능한 메카니즘(UPNP or NAT-pmp) 을 발견하려 노력하는 포트 맵퍼를 리턴한다
 func defaultNodeConfig() node.Config {
 	cfg := node.DefaultConfig
 	cfg.Name = clientIdentifier
@@ -110,13 +120,18 @@ func defaultNodeConfig() node.Config {
 func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 	// Load defaults.
 	cfg := gethConfig{
+// fast sync모드
+// txPool도 기본설정사용
+// 가스 신탁 설정
 		Eth:       eth.DefaultConfig,
 		Shh:       whisper.DefaultConfig,
+		//바로 위 함수
 		Node:      defaultNodeConfig(),
 		Dashboard: dashboard.DefaultConfig,
 	}
 
 	// Load config file.
+	//설정파일이 있다면 읽어서 각 설정을 업데이트한다
 	if file := ctx.GlobalString(configFileFlag.Name); file != "" {
 		if err := loadConfig(file, &cfg); err != nil {
 			utils.Fatalf("%v", err)
@@ -125,10 +140,12 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 
 	// Apply flags.
 	utils.SetNodeConfig(ctx, &cfg.Node)
+	// account manager 만 설정된 노드가 리턴
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
 	}
+	//이더리움 관련 설정
 	utils.SetEthConfig(ctx, stack, &cfg.Eth)
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ethstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
@@ -151,6 +168,8 @@ func enableWhisper(ctx *cli.Context) bool {
 }
 
 func makeFullNode(ctx *cli.Context) *node.Node {
+	//각 패키지에 디폴트로 설정된 값들을 읽어 설정한다.
+	//P2P설정이 완료되고 Account Manager가 설정되고, 이더리움 설정을 가진 노드를 생성함
 	stack, cfg := makeConfigNode(ctx)
 
 	utils.RegisterEthService(stack, &cfg.Eth)

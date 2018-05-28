@@ -140,6 +140,11 @@ type TxPoolConfig struct {
 
 // DefaultTxPoolConfig contains the default configurations for the transaction
 // pool.
+// tx pool 기본설정
+// 어카운트당 보장가능한 실행가능 트렌젝션수
+// 모든 어카운트가 사용가능한 실행가능 트렌젝션수
+// 어카운트당 보장가능한 아직 실행불가한 트렌젝션수
+// 모든 어카운트가 사용가능한 아직 실행 불가능한 트렌젝션수
 var DefaultTxPoolConfig = TxPoolConfig{
 	Journal:   "transactions.rlp",
 	Rejournal: time.Hour,
@@ -602,6 +607,12 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 // If a newly added transaction is marked as local, its sending account will be
 // whitelisted, preventing any associated transaction from being dropped out of
 // the pool due to pricing constraints.
+
+// 트랜젝션을 검증하고, 차후 pending 에서 승격되어 실행되도록 실행불가 큐에 추가한다.
+// 만약 이 트렌젝션이 이미 pending되었거나 승격되어 실행되기 전이라면 기존 트렌젝션에 덮어씌워
+// promote함수를 재호출하지 않도록 한다
+// 만약 새롭게 추가된 트렌젝션이 로컬로 표시된다면, 트렌젝션을 생성한 어카운트는 화이트 리스트에 등록되어
+// 다른 관련된 트렌젝션의 영향으로 가격 제약이 생겨 풀에서 드랍되지 않도록 한다.
 func (pool *TxPool) add(tx *types.Transaction, local bool) (bool, error) {
 	// If the transaction is already known, discard it
 	hash := tx.Hash()

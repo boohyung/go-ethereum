@@ -74,6 +74,7 @@ type Node struct {
 }
 
 // New creates a new P2P node, ready for protocol registration.
+// p2p 노드를 만들고 프로토콜을 준비한다.
 func New(conf *Config) (*Node, error) {
 	// Copy config and resolve the datadir so future changes to the current
 	// working directory don't affect the node.
@@ -99,6 +100,8 @@ func New(conf *Config) (*Node, error) {
 	}
 	// Ensure that the AccountManager method works before the node has started.
 	// We rely on this in cmd/geth.
+	// Account Manager 생성
+	// 현재 등록된 백앤드는 지갑이고,각 백앤드들이 매니저를 구독한 상태임
 	am, ephemeralKeystore, err := makeAccountManager(conf)
 	if err != nil {
 		return nil, err
@@ -108,6 +111,7 @@ func New(conf *Config) (*Node, error) {
 	}
 	// Note: any interaction with Config that would create/touch files
 	// in the data directory or instance directory is delayed until Start.
+	// account manager 만 설정된 노드가 리턴된다
 	return &Node{
 		accman:            am,
 		ephemeralKeystore: ephemeralKeystore,

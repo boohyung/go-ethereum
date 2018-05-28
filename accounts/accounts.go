@@ -130,6 +130,8 @@ type Wallet interface {
 
 // Backend is a "wallet provider" that may contain a batch of accounts they can
 // sign transactions with and upon request, do so.
+// 백엔드는 지갑 제공자인데 트렌젝션에 사인가능한 여러 어카운트의 모임이다.
+// 지갑과 지갑이벤트 구독기능을 구현한 인터페이스
 type Backend interface {
 	// Wallets retrieves the list of wallets the backend is currently aware of.
 	//

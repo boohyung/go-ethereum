@@ -56,6 +56,10 @@ var KeyStoreScheme = "keystore"
 const walletRefreshCycle = 3 * time.Second
 
 // KeyStore manages a key storage directory on disk.
+// 디스크상의 키스토어 저장소(폴더)를 곤리한다
+// backend inerface 구현하고 있다(wallets)
+// 지갑추가나 제거를 알릴 이벤트피드
+// 현재 구독중인 리스너들을 트렉킹한다
 type KeyStore struct {
 	storage  keyStore                     // Storage backend, might be cleartext or encrypted
 	cache    *accountCache                // In-memory account cache over the filesystem storage
@@ -76,6 +80,7 @@ type unlocked struct {
 }
 
 // NewKeyStore creates a keystore for the given directory.
+// 위에 KeyStore 구조체 참조
 func NewKeyStore(keydir string, scryptN, scryptP int) *KeyStore {
 	keydir, _ = filepath.Abs(keydir)
 	ks := &KeyStore{storage: &keyStorePassphrase{keydir, scryptN, scryptP}}
