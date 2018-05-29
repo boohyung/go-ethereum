@@ -86,6 +86,12 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg
 // and uses the input parameters for its environment. It returns the receipt
 // for the transaction, gas used and an error if the transaction failed,
 // indicating the block was invalid.
+/*
+이 함수는 주어진 스테이트 DB에 트렌젝션을 적용하고,
+인자로 전달된 파라미터를 사용하기 위한 함수이다.
+트렌젝션의 영수증과 가스사용량과 에러상태를 반환하며
+트렌젝션이 실패할경우 블록이 검증되지 않았음을 지시한다
+*/
 func ApplyTransaction(config *params.ChainConfig, bc *BlockChain, author *common.Address, gp *GasPool, statedb *state.StateDB, header *types.Header, tx *types.Transaction, usedGas *uint64, cfg vm.Config) (*types.Receipt, uint64, error) {
 	msg, err := tx.AsMessage(types.MakeSigner(config, header.Number))
 	if err != nil {

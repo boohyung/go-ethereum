@@ -532,6 +532,8 @@ func (pool *TxPool) Content() (map[common.Address]types.Transactions, map[common
 // Pending retrieves all currently processable transactions, groupped by origin
 // account and sorted by nonce. The returned transaction set is a copy and can be
 // freely modified by calling code.
+// 이 함수는 현재 프로세싱이 가능한 트렌젝션을 검색하고 
+// 관련 어카운트별로 그룹핑한 후 논스로 정렬한다.
 func (pool *TxPool) Pending() (map[common.Address]types.Transactions, error) {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()

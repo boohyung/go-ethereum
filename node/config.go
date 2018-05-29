@@ -175,6 +175,7 @@ func (c *Config) IPCEndpoint() string {
 }
 
 // NodeDB returns the path to the discovery node database.
+// 디스커버리 노드 디비 리턴
 func (c *Config) NodeDB() string {
 	if c.DataDir == "" {
 		return "" // ephemeral

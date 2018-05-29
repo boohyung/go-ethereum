@@ -142,6 +142,7 @@ func (n *Node) Register(constructor ServiceConstructor) error {
 }
 
 // Start create a live P2P node and starts running it.
+// 살아있는 p2p 노드를 만들고 실행시킴
 func (n *Node) Start() error {
 	n.lock.Lock()
 	defer n.lock.Unlock()
@@ -156,6 +157,7 @@ func (n *Node) Start() error {
 
 	// Initialize the p2p server. This creates the node key and
 	// discovery databases.
+	// p2p 서버를 초기화 한다. Node Key와 발견DB를 생성한다
 	n.serverConfig = n.config.P2P
 	n.serverConfig.PrivateKey = n.config.NodeKey()
 	n.serverConfig.Name = n.config.NodeName()
@@ -167,8 +169,11 @@ func (n *Node) Start() error {
 		n.serverConfig.TrustedNodes = n.config.TrustedNodes()
 	}
 	if n.serverConfig.NodeDatabase == "" {
+		// 디스커버리 노드 디비 리턴
 		n.serverConfig.NodeDatabase = n.config.NodeDB()
 	}
+	// p2p 서버 실행
+	// 서버 구조체는 모든 피어들과의 연결을 관리한다
 	running := &p2p.Server{Config: n.serverConfig}
 	n.log.Info("Starting peer-to-peer node", "instance", n.serverConfig.Name)
 
@@ -197,9 +202,12 @@ func (n *Node) Start() error {
 		services[kind] = service
 	}
 	// Gather the protocols and start the freshly assembled P2P server
+	// 프로토콜들을 모아서 새롭게 모인 서버에서 실행시킴
 	for _, service := range services {
 		running.Protocols = append(running.Protocols, service.Protocols()...)
 	}
+	// 서버를 시작한다
+	// TODO : RLPX, Discovery5, handshake/dial/listen
 	if err := running.Start(); err != nil {
 		return convertFileLockError(err)
 	}
@@ -207,6 +215,8 @@ func (n *Node) Start() error {
 	started := []reflect.Type{}
 	for kind, service := range services {
 		// Start the next service, stopping all previous upon failure
+		// 노드의 서비스를 구현한다. 모니터링/레포팅 데몬을 실행시킨다
+		// 데몬은 netstat서버에 접속하려고 노력하고, 체인 이벤트를 레포팅한다.
 		if err := service.Start(running); err != nil {
 			for _, kind := range started {
 				services[kind].Stop()
@@ -219,6 +229,7 @@ func (n *Node) Start() error {
 		started = append(started, kind)
 	}
 	// Lastly start the configured RPC interfaces
+	// RPC 인터페이스 실행
 	if err := n.startRPC(services); err != nil {
 		for _, service := range services {
 			service.Stop()
@@ -516,6 +527,7 @@ func (n *Node) Server() *p2p.Server {
 }
 
 // Service retrieves a currently running service registered of a specific type.
+// 이 함수는 등록되어 동작하는 특정 서비스를 검색한다
 func (n *Node) Service(service interface{}) error {
 	n.lock.RLock()
 	defer n.lock.RUnlock()

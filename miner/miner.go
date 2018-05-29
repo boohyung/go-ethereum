@@ -66,6 +66,7 @@ func New(eth Backend, config *params.ChainConfig, mux *event.TypeMux, engine con
 		worker:   newWorker(config, engine, common.Address{}, eth, mux),
 		canStart: 1,
 	}
+	// cpu agent가 마이너로 등록됨
 	miner.Register(NewCpuAgent(eth.BlockChain(), engine))
 	// 
 	go miner.update()
@@ -109,6 +110,24 @@ out:
 	}
 }
 
+// 마이닝 시작함수
+// 이벤트 처리 핸들러를 동작시켜놓는다(대기중)
+// 이후 부터는 내부적으로 commitNewWork를 호출하여 무한루프로 동작
+// 블록 시간 체크(너무 시간이 많이 가지 않도록)
+// 새로운 해더를 생성하고, 해더 번호에 부모+1
+// 헤더가 ethash 프로토콜을 따르도록 난이도 필드를 초기화 한다.
+// 현재 프로세싱이 가능한 트렌젝션을 검색하고 
+// 관련 어카운트별로 그룹핑한 후 논스로 정렬한다.
+//논스 존중 방식으로 가격정렬된 트렌젝션의 세트를 만든다
+// 트렌젝션을 적용하고 트렌젝션과 영수증을 만든다
+// 주어진 스테이트 DB에 트렌젝션을 적용하고,
+// 트렌젝션의 영수증과 가스사용량과 에러상태를 반환하며
+// 트렌젝션이 실패할경우 블록이 검증되지 않았음을 지시한다
+// 펜딩 스테이트 이벤트를 던진다
+// TODO 엉클블록처리
+// 합의 엔진으로 봉인하기 위한 새 블록을 만든다
+// 블록을 누적하고 엉클 리워드를 하고 최종 상태를 설정하고 블록을 조립한다
+//새로운 작업을 현재 살아있는 마이너 에이전트에게 전달한다
 func (self *Miner) Start(coinbase common.Address) {
 	atomic.StoreInt32(&self.shouldStart, 1)
 	self.SetEtherbase(coinbase)

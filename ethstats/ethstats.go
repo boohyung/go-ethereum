@@ -118,8 +118,12 @@ func (s *Service) Protocols() []p2p.Protocol { return nil }
 func (s *Service) APIs() []rpc.API { return nil }
 
 // Start implements node.Service, starting up the monitoring and reporting daemon.
+// 이 함수는 노드의 서비스 구현한다. 모니터링/레포팅 데몬을 실행시킨다
+// 데몬은 netstat서버에 접속하려고 노력하고, 체인 이벤트를 레포팅한다.
 func (s *Service) Start(server *p2p.Server) error {
+	//해당 서비스의 서버에 인자로 전달된 서버를 등록함
 	s.server = server
+// 이 함수는 netstat서버에 접속하려고 노력하고, 체인 이벤트를 레포팅한다.
 	go s.loop()
 
 	log.Info("Stats daemon started")
@@ -134,6 +138,7 @@ func (s *Service) Stop() error {
 
 // loop keeps trying to connect to the netstats server, reporting chain events
 // until termination.
+// 이 함수는 netstat서버에 접속하려고 노력하고, 체인 이벤트를 레포팅한다.
 func (s *Service) loop() {
 	// Subscribe to chain events to execute updates on
 	var blockchain blockChain
@@ -146,10 +151,12 @@ func (s *Service) loop() {
 		txpool = s.les.TxPool()
 	}
 
+	// 체인 헤드 이벤트를 구독함
 	chainHeadCh := make(chan core.ChainHeadEvent, chainHeadChanSize)
 	headSub := blockchain.SubscribeChainHeadEvent(chainHeadCh)
 	defer headSub.Unsubscribe()
 
+	// 트렌젝션 이벤트를 구독함
 	txEventCh := make(chan core.NewTxsEvent, txChanSize)
 	txSub := txpool.SubscribeNewTxsEvent(txEventCh)
 	defer txSub.Unsubscribe()

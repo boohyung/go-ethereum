@@ -144,6 +144,8 @@ type Config struct {
 }
 
 // Server manages all peer connections.
+// 서버 구조체는 모든 피어들과의 연결을 관리한다
+// discv5 이용
 type Server struct {
 	// Config fields may not be modified while the server is running.
 	Config
@@ -381,6 +383,8 @@ func (s *sharedUDPConn) Close() error {
 
 // Start starts running the server.
 // Servers can not be re-used after stopping.
+// 서버를 시작한다
+// TODO : RLPX, Discovery5, handshake/dial/listen
 func (srv *Server) Start() (err error) {
 	srv.lock.Lock()
 	defer srv.lock.Unlock()
@@ -395,6 +399,7 @@ func (srv *Server) Start() (err error) {
 	srv.log.Info("Starting P2P networking")
 
 	// static fields
+	// newRLPX
 	if srv.PrivateKey == nil {
 		return fmt.Errorf("Server.PrivateKey must be set to a non-nil key")
 	}
