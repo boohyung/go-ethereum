@@ -86,6 +86,15 @@ type CacheConfig struct {
 // important to note that GetBlock can return any block and does not need to be
 // included in the canonical one where as GetBlockByNumber always represents the
 // canonical chain.
+
+// 블록체인 구조체는 제네시스 블록을 가진 주어진 DB의 캐노니컬 체인을 표현한다.
+// 체인의 수신/되돌리기/재구성 작업을 관리한다
+// 블록을 수신하는 것은 두개의 스테이지 검증자간의 규칙세트에 따라 발생한다.
+// 블록들의 처리는 포함된 트렌젝션을 처리하는 state 처리자를 이용하여 완료한다.
+// 스테이지의 검증은 검증자의 두번째 파트에서 끝나고, 검증 실패시 수신이 포기된다
+// 이구조체는 db상의 어떤 canonical체인도 지원한다.
+// 이부분이 중요한 이유는 GetBlocks이 캐노니컬 채인에 필요하지 안은 블록을 리턴할 가능성이 있으며
+// 캐노니컬안에 포함될 필요가 없다. 왜냐하면 GetBlockByNumber가 언제나 캐노니컬 체인을 나타내기 때문이다
 type BlockChain struct {
 	chainConfig *params.ChainConfig // Chain & network configuration
 	cacheConfig *CacheConfig        // Cache configuration for pruning
@@ -115,6 +124,7 @@ type BlockChain struct {
 	bodyCache    *lru.Cache     // Cache for the most recent block bodies
 	bodyRLPCache *lru.Cache     // Cache for the most recent block bodies in RLP encoded format
 	blockCache   *lru.Cache     // Cache for the most recent entire blocks
+	// 나중에 처리되기위해 더해진 블록들
 	futureBlocks *lru.Cache     // future blocks are blocks added for later processing
 
 	quit    chan struct{} // blockchain quit channel
@@ -134,6 +144,8 @@ type BlockChain struct {
 // NewBlockChain returns a fully initialised block chain using information
 // available in the database. It initialises the default Ethereum Validator and
 // Processor.
+// 이 함수는 DB의 정보를 이용해서 완전히 초기화된 블록체인을 리턴한다.
+// 이더리움의 기본 검증자와 처리자를 초기화한다
 func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *params.ChainConfig, engine consensus.Engine, vmConfig vm.Config) (*BlockChain, error) {
 	if cacheConfig == nil {
 		cacheConfig = &CacheConfig{
@@ -162,10 +174,14 @@ func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *par
 		vmConfig:     vmConfig,
 		badBlocks:    badBlocks,
 	}
+	// 검증자와 스테이트 처리자 설정
+	// 블록 검증자는 블록의 헤더와 엉클블락들과 처리된 스테이트를 검증해야한다
+	// 상태 처리자는 기본 처리자로서, 한 지점에서 다른 지점으로의 state의 변환을 관리한다
 	bc.SetValidator(NewBlockValidator(chainConfig, bc, engine))
 	bc.SetProcessor(NewStateProcessor(chainConfig, bc, engine))
 
 	var err error
+	// 이 함수는 새로운 헤더체인 구조체를 생성한다.
 	bc.hc, err = NewHeaderChain(db, chainConfig, engine, bc.getProcInterrupt)
 	if err != nil {
 		return nil, err
@@ -174,6 +190,9 @@ func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *par
 	if bc.genesisBlock == nil {
 		return nil, ErrNoGenesis
 	}
+	// 이함수는 DB로부터 마지막으로 알려진 state를 읽어온다.
+	// 메인 계정 trie를 오픈하고 stateDB를 생성한다
+	// 현재 블록과 현재 블록헤더를 설정하고 tota difficulty를 계산한다
 	if err := bc.loadLastState(); err != nil {
 		return nil, err
 	}
@@ -191,6 +210,7 @@ func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *par
 		}
 	}
 	// Take ownership of this particular state
+	// 5초마다 퓨처블록들을 체인에 추가하는 루틴 실행
 	go bc.update()
 	return bc, nil
 }
@@ -201,6 +221,7 @@ func (bc *BlockChain) getProcInterrupt() bool {
 
 // loadLastState loads the last known chain state from the database. This method
 // assumes that the chain manager mutex is held.
+// 이함수는 DB로부터 마지막으로 알려진 state를 읽어온다.
 func (bc *BlockChain) loadLastState() error {
 	// Restore the last known head block
 	head := rawdb.ReadHeadBlockHash(bc.db)
@@ -210,6 +231,7 @@ func (bc *BlockChain) loadLastState() error {
 		return bc.Reset()
 	}
 	// Make sure the entire head block is available
+	//헤더블럭을 검증한다
 	currentBlock := bc.GetBlockByHash(head)
 	if currentBlock == nil {
 		// Corrupt or empty database, init from scratch
@@ -217,6 +239,8 @@ func (bc *BlockChain) loadLastState() error {
 		return bc.Reset()
 	}
 	// Make sure the state associated with the block is available
+	// 블록과 관련된 상태가 온전한지 확인
+	// 메인 계정 trie를 오픈하고 stateDB를 생성한다
 	if _, err := state.New(currentBlock.Root(), bc.stateCache); err != nil {
 		// Dangling block without a state associated, init from scratch
 		log.Warn("Head state missing, repairing chain", "number", currentBlock.Number(), "hash", currentBlock.Hash())
@@ -225,18 +249,23 @@ func (bc *BlockChain) loadLastState() error {
 		}
 	}
 	// Everything seems to be fine, set as the head block
+	// 
 	bc.currentBlock.Store(currentBlock)
 
 	// Restore the last known head header
+	// 현재블록으로 저장하고 현재 head값을 하나 증가시켜 common.hash값을 가지게 한다.
+	// 아까 전엔 현재 블록 헤드가 common hash를 가지고 있었다.
 	currentHeader := currentBlock.Header()
 	if head := rawdb.ReadHeadHeaderHash(bc.db); head != (common.Hash{}) {
 		if header := bc.GetHeaderByHash(head); header != nil {
 			currentHeader = header
 		}
 	}
+	//current head 는 불록의 다음 헤드를 가리킨다.
 	bc.hc.SetCurrentHeader(currentHeader)
 
 	// Restore the last known head fast block
+	// 빠른 블록에 현재 블록을 설정한다
 	bc.currentFastBlock.Store(currentBlock)
 	if head := rawdb.ReadHeadFastBlockHash(bc.db); head != (common.Hash{}) {
 		if block := bc.GetBlockByHash(head); block != nil {
@@ -247,6 +276,7 @@ func (bc *BlockChain) loadLastState() error {
 	// Issue a status log for the user
 	currentFastBlock := bc.CurrentFastBlock()
 
+	//Total difficulty 업데이트
 	headerTd := bc.GetTd(currentHeader.Hash(), currentHeader.Number.Uint64())
 	blockTd := bc.GetTd(currentBlock.Hash(), currentBlock.NumberU64())
 	fastTd := bc.GetTd(currentFastBlock.Hash(), currentFastBlock.NumberU64())
@@ -577,6 +607,7 @@ func (bc *BlockChain) GetBlock(hash common.Hash, number uint64) *types.Block {
 }
 
 // GetBlockByHash retrieves a block from the database by hash, caching it if found.
+// 이함수는 해시를 이용해 DB의 block을 검색하고, 캐싱한다.
 func (bc *BlockChain) GetBlockByHash(hash common.Hash) *types.Block {
 	number := bc.hc.GetBlockNumber(hash)
 	if number == nil {
@@ -681,17 +712,22 @@ func (bc *BlockChain) Stop() {
 	log.Info("Blockchain manager stopped")
 }
 
+// 퓨처블록을 처리한다
 func (bc *BlockChain) procFutureBlocks() {
 	blocks := make([]*types.Block, 0, bc.futureBlocks.Len())
+	// 퓨처블록의 키들을 검색하여 키에 해당하는 해시가 있는 블록을 골라낸다.
 	for _, hash := range bc.futureBlocks.Keys() {
 		if block, exist := bc.futureBlocks.Peek(hash); exist {
 			blocks = append(blocks, block.(*types.Block))
 		}
 	}
 	if len(blocks) > 0 {
+		//블록넘버로 정렬해서 체인에 추가한다
 		types.BlockBy(types.Number).Sort(blocks)
 
 		// Insert one by one as chain insertion needs contiguous ancestry between blocks
+		// 이함수는 주어진 블록들을 캐노니컬 체인에 추가하거나, 포크를 생성한다
+		// 추가가 끝나면, 누적되었던 모든 이벤트가 발생함
 		for i := range blocks {
 			bc.InsertChain(blocks[i : i+1])
 		}
@@ -999,6 +1035,8 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 // wrong.
 //
 // After insertion is done, all accumulated events will be fired.
+// 이함수는 주어진 블록들을 캐노니컬 체인에 추가하거나, 포크를 생성한다
+// 추가가 끝나면, 누적되었던 모든 이벤트가 발생함
 func (bc *BlockChain) InsertChain(chain types.Blocks) (int, error) {
 	n, events, logs, err := bc.insertChain(chain)
 	bc.PostChainEvents(events, logs)
@@ -1008,6 +1046,7 @@ func (bc *BlockChain) InsertChain(chain types.Blocks) (int, error) {
 // insertChain will execute the actual chain insertion and event aggregation. The
 // only reason this method exists as a separate one is to make locking cleaner
 // with deferred statements.
+// 이함수는 실제 체인에 블록을 추가하고, 이벤트를 누적할것이다
 func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*types.Log, error) {
 	// Do a sanity check that the provided chain is actually ordered and linked
 	for i := 1; i < len(chain); i++ {
@@ -1374,12 +1413,14 @@ func (bc *BlockChain) PostChainEvents(events []interface{}, logs []*types.Log) {
 	}
 }
 
+//5s ticker
 func (bc *BlockChain) update() {
 	futureTimer := time.NewTicker(5 * time.Second)
 	defer futureTimer.Stop()
 	for {
 		select {
 		case <-futureTimer.C:
+			// 퓨처블록을 5초마다 처리한다
 			bc.procFutureBlocks()
 		case <-bc.quit:
 			return

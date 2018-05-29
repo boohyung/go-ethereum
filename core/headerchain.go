@@ -70,6 +70,10 @@ type HeaderChain struct {
 //  getValidator should return the parent's validator
 //  procInterrupt points to the parent's interrupt semaphore
 //  wg points to the parent's shutdown wait group
+// 이 함수는 새로운 헤더체인 구조체를 생성한다.
+// getValidator는 반드시 부모의 검증자를 반환해야하며
+// procInterrupt는 부모의 인터럽트 세마포어를 가리킨다
+// wg는 부모의 종료 대기 그룹을 가리킨다
 func NewHeaderChain(chainDb ethdb.Database, config *params.ChainConfig, engine consensus.Engine, procInterrupt func() bool) (*HeaderChain, error) {
 	headerCache, _ := lru.New(headerCacheLimit)
 	tdCache, _ := lru.New(tdCacheLimit)

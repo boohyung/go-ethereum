@@ -31,6 +31,7 @@ import (
 // state from one point to another.
 //
 // StateProcessor implements Processor.
+// 상태 처리자는 기본 처리자로서, 한 지점에서 다른 지점으로의 state의 변환을 관리한다
 type StateProcessor struct {
 	config *params.ChainConfig // Chain configuration options
 	bc     *BlockChain         // Canonical block chain

@@ -198,6 +198,7 @@ type BlockChain interface {
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
+// 해쉬나 블록을 원격피어로 부터 가져오는 다운로더를 만든다
 func New(mode SyncMode, stateDb ethdb.Database, mux *event.TypeMux, chain BlockChain, lightchain LightChain, dropPeer peerDropFn) *Downloader {
 	if lightchain == nil {
 		lightchain = chain
@@ -228,7 +229,9 @@ func New(mode SyncMode, stateDb ethdb.Database, mux *event.TypeMux, chain BlockC
 		},
 		trackStateReq: make(chan *stateReq),
 	}
+	// Qos 튜너는 산발적으로 피어들의 지연속도를 모아 예측시간을 업데이트 한다
 	go dl.qosTuner()
+	// statefetcher는 피어 일동의 active state 동기화 및 요청 수락을 관리한다
 	go dl.stateFetcher()
 	return dl
 }
@@ -1568,6 +1571,7 @@ func (d *Downloader) deliver(id string, destCh chan dataPack, packet dataPack, i
 
 // qosTuner is the quality of service tuning loop that occasionally gathers the
 // peer latency statistics and updates the estimated request round trip time.
+// Qos 튜너는 산발적으로 피어들의 지연속도를 모아 예측시간을 업데이트 한다
 func (d *Downloader) qosTuner() {
 	for {
 		// Retrieve the current median RTT and integrate into the previoust target RTT

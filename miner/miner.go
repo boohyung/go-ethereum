@@ -43,6 +43,7 @@ type Backend interface {
 }
 
 // Miner creates blocks and searches for proof-of-work values.
+// 마이너는 블록을 생성하고 pow 값을 찾는다
 type Miner struct {
 	mux *event.TypeMux
 
@@ -66,6 +67,7 @@ func New(eth Backend, config *params.ChainConfig, mux *event.TypeMux, engine con
 		canStart: 1,
 	}
 	miner.Register(NewCpuAgent(eth.BlockChain(), engine))
+	// 
 	go miner.update()
 
 	return miner
@@ -75,6 +77,10 @@ func New(eth Backend, config *params.ChainConfig, mux *event.TypeMux, engine con
 // It's entered once and as soon as `Done` or `Failed` has been broadcasted the events are unregistered and
 // the loop is exited. This to prevent a major security vuln where external parties can DOS you with blocks
 // and halt your mining operation for as long as the DOS continues.
+
+// 이함수는 다운로더 이벤트를 트랙킹한다. (한번짜리)
+// 체인이 sync되었는지, 실패했는지 확인한다.
+
 func (self *Miner) update() {
 	events := self.mux.Subscribe(downloader.StartEvent{}, downloader.DoneEvent{}, downloader.FailedEvent{})
 out:

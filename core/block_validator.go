@@ -29,6 +29,7 @@ import (
 // processed state.
 //
 // BlockValidator implements Validator.
+// 블록 검증자는 블록의 헤더와 엉클블락들과 처리된 스테이트를 검증해야한다
 type BlockValidator struct {
 	config *params.ChainConfig // Chain configuration options
 	bc     *BlockChain         // Canonical block chain

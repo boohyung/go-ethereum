@@ -127,6 +127,9 @@ func New(conf *Config) (*Node, error) {
 
 // Register injects a new service into the node's stack. The service created by
 // the passed constructor must be unique in its type with regard to sibling ones.
+// 이 함수는 노드의 스택에 새 서비스를 등록한다. 
+// 전달된 서비스 생성자로부터 생성된 서비스는 유니크 해야한다
+
 func (n *Node) Register(constructor ServiceConstructor) error {
 	n.lock.Lock()
 	defer n.lock.Unlock()

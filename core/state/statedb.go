@@ -84,7 +84,9 @@ type StateDB struct {
 }
 
 // Create a new state from a given trie.
+// 주어진 trie로 부터 새로운 스테이트(stateDB)를 생성한다.
 func New(root common.Hash, db Database) (*StateDB, error) {
+
 	tr, err := db.OpenTrie(root)
 	if err != nil {
 		return nil, err

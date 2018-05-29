@@ -98,7 +98,12 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new Ethereum sub protocol manager. The Ethereum sub protocol manages peers capable
 // with the Ethereum network.
-// jytest 
+// 이 함수는 이더리움 서브 프로토콜 매니저를 Create.
+// 이더리움 서브프로토콜은 이더리움 네트워크에서 동작가능한 피어들을 관리한다  
+// 해쉬나 블록을 원격피어로 부터 가져오는 다운로더를 만든다
+// Qos 튜너는 산발적으로 피어들의 지연속도를 모아 예측시간을 업데이트 한다
+// statefetcher는 피어 일동의 active state 동기화 및 요청 수락을 관리한다
+// 해쉬 어나운스먼트를 베이스로 블록을 검색하는 블록패쳐를 만든다
 func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, networkId uint64, mux *event.TypeMux, txpool txPool, engine consensus.Engine, blockchain *core.BlockChain, chaindb ethdb.Database) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
@@ -122,6 +127,8 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 		manager.fastSync = uint32(1)
 	}
 	// Initiate a sub-protocol for every implemented version we can handle
+	// 서브 프로토콜을 초기화 한다
+	// 피어별로 사용하는 프로토콜 버전이 다를 수 있으므로 각 버전에 대해 초기화 해준다
 	manager.SubProtocols = make([]p2p.Protocol, 0, len(ProtocolVersions))
 	for i, version := range ProtocolVersions {
 		// Skip protocol version if incompatible with the mode of operation
@@ -160,6 +167,10 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 		return nil, errIncompatibleConfig
 	}
 	// Construct the different synchronisation mechanisms
+	// 해쉬나 블록을 원격피어로 부터 가져오는 다운로더를 만든다
+	// Qos 튜너는 산발적으로 피어들의 지연속도를 모아 예측시간을 업데이트 한다
+	// statefetcher는 피어 일동의 active state 동기화 및 요청 수락을 관리한다
+	// FullSync, FastSync, LightSync
 	manager.downloader = downloader.New(mode, chaindb, manager.eventMux, blockchain, nil, manager.removePeer)
 
 	validator := func(header *types.Header) error {
@@ -177,6 +188,7 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 		atomic.StoreUint32(&manager.acceptTxs, 1) // Mark initial sync done on any fetcher import
 		return manager.blockchain.InsertChain(blocks)
 	}
+	// 해쉬 어나운스먼트를 베이스로 블록을 검색하는 블록패쳐를 만든다
 	manager.fetcher = fetcher.New(blockchain.GetBlockByHash, validator, manager.BroadcastBlock, heighter, inserter, manager.removePeer)
 
 	return manager, nil
@@ -244,6 +256,7 @@ func (pm *ProtocolManager) Stop() {
 }
 
 func (pm *ProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
+	//eth/peer.go 참조
 	return newPeer(pv, p, newMeteredMsgWriter(rw))
 }
 

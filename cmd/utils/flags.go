@@ -1139,6 +1139,23 @@ func RegisterEthService(stack *node.Node, cfg *eth.Config) {
 		})
 	} else {
 		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+		// 이함수는 새로운 이더리움 오브젝트를 생성하고 초기화한다
+		// 체인DB(Level DB)를 생성하거나 이미 존재한다면 접속, 메인넷 genesis 블럭을 사용 
+		// DB의 정보를 이용해서 완전히 초기화된 블록체인을 리턴한다.
+		// 이더리움의 기본 검증자와 처리자를 초기화한다
+		// DB로부터 마지막으로 알려진 state를 읽어온다.
+		// 메인 계정 trie를 오픈하고 stateDB를 생성한다
+		// 현재 블록과 현재 블록헤더를 설정하고 tota difficulty를 계산한다
+		// 5초마다 퓨처블록들을 체인에 추가하는 루틴 실행
+		// TX pool 생성 & 체인 헤드 이벤트 구독 	
+		// 이더리움 서브프로토콜: 네트워크에서 동작가능한 피어들을 관리  
+		// 해쉬나 블록을 원격피어로 부터 가져오는 다운로더를 만든다
+		// Qos 튜너는 산발적으로 피어들의 지연속도를 모아 예측시간을 업데이트 한다
+		// statefetcher는 피어 일동의 active state 동기화 및 요청 수락을 관리한다
+		// 해쉬 어나운스먼트를 베이스로 블록을 검색하는 블록패쳐를 만든다
+		// 다운로더 이벤트를 트랙킹한다. (한번짜리)
+		// 체인이 sync되었는지, 실패했는지 확인한다.
+		// 가스 오라클 생성
 			fullNode, err := eth.New(ctx, cfg)
 			if fullNode != nil && cfg.LightServ > 0 {
 				ls, _ := les.NewLesServer(fullNode, cfg)

@@ -218,6 +218,7 @@ type TxPool struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
+// 이함수는 네트워크로 부터 들어오는 트렌젝션들을 수집하고 정렬하고 필터링할 새로운 트렌젝션 풀을 생성한다 
 func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain blockChain) *TxPool {
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
@@ -251,10 +252,12 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 		}
 	}
 	// Subscribe events from blockchain
+	// 블록체인의 체인 헤드 이벤트를 구독한다
 	pool.chainHeadSub = pool.chain.SubscribeChainHeadEvent(pool.chainHeadCh)
 
 	// Start the event loop and return
 	pool.wg.Add(1)
+	// 풀루프를 시작한다
 	go pool.loop()
 
 	return pool
@@ -263,6 +266,8 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 // loop is the transaction pool's main event loop, waiting for and reacting to
 // outside blockchain events as well as for various reporting and transaction
 // eviction events.
+// 트렉젠션 풀의 메인 루프로서 다양한 레포팅이나 트렌젝션 퇴거등의 
+// 외부 불록체인 이벤트를 기다리거나 반응한다
 func (pool *TxPool) loop() {
 	defer pool.wg.Done()
 

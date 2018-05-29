@@ -34,6 +34,9 @@ import (
 // ChainIndexerBackend defines the methods needed to process chain segments in
 // the background and write the segment results into the database. These can be
 // used to create filter blooms or CHTs.
+// 체인 인덱서 백엔드는 체인 세그먼트를 백그라운드로 처리하고
+// 세그먼트 결과를 DB에 쓰기위해 위해 필요한 방법들을 정의한다
+// 블룸필터나 CHT를 생성하는데 이용된다.
 type ChainIndexerBackend interface {
 	// Reset initiates the processing of a new chain segment, potentially terminating
 	// any partially completed operations (in case of a reorg).
@@ -48,6 +51,7 @@ type ChainIndexerBackend interface {
 }
 
 // ChainIndexerChain interface is used for connecting the indexer to a blockchain
+// 인덱서를 블록체인에 연결하기 위해 사용되는 인터페이스
 type ChainIndexerChain interface {
 	// CurrentHeader retrieves the latest locally known header.
 	CurrentHeader() *types.Header
@@ -65,6 +69,14 @@ type ChainIndexerChain interface {
 // section indexer. These child indexers receive new head notifications only
 // after an entire section has been finished or in case of rollbacks that might
 // affect already finished sections.
+
+// 체인 인덱서는 캐노니컬 체인의 동일한 크기로 계획된 업무의 후처리를 담당한다 
+// (bloomBits, CHT struct)
+// 체인 인덱서는 체인이벤트 루프를 시작하여 이벤트 시스템을 통해 블록체인에 연결된다. 
+
+// 더욱이 자식 인덱서들은 부모의 섹션 인덱서의 출력값으로서 추가될수 있다.
+// 이러한 자식인덱서 들은 새로운 헤드 노티를 모든 섹션이 끝나거나
+// 이미 끝난 섹션의 롤백시에 받는다
 type ChainIndexer struct {
 	chainDb  ethdb.Database      // Chain database to index the data from
 	indexDb  ethdb.Database      // Prefixed table-view of the db to write index metadata into
@@ -126,6 +138,9 @@ func (c *ChainIndexer) AddKnownSectionHead(section uint64, shead common.Hash) {
 // Start creates a goroutine to feed chain head events into the indexer for
 // cascading background processing. Children do not need to be started, they
 // are notified about new events by their parents.
+//이함수는 체인 헤드 이벤트를 인덱서쪽으로 feed할 고루틴을 생성한다
+// 백그라운드 처리의 연속성을 위하여.
+// 자식들은 부모로 부터 새로운 이벤트를 수신하므로 이함수를 호출할 필요가 없다.
 func (c *ChainIndexer) Start(chain ChainIndexerChain) {
 	events := make(chan ChainEvent, 10)
 	sub := chain.SubscribeChainEvent(events)
@@ -173,6 +188,8 @@ func (c *ChainIndexer) Close() error {
 // eventLoop is a secondary - optional - event loop of the indexer which is only
 // started for the outermost indexer to push chain head events into a processing
 // queue.
+//이벤트 루프는 선택적이고 부수적인 인덱서의 이벤트 루프로서
+// 체인 헤드 이벤트를 외부 인덱서들의 프로세싱큐에 넣기 위해서 시작된다.
 func (c *ChainIndexer) eventLoop(currentHeader *types.Header, events chan ChainEvent, sub event.Subscription) {
 	// Mark the chain indexer as active, requiring an additional teardown
 	atomic.StoreUint32(&c.active, 1)
