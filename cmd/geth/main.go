@@ -179,6 +179,7 @@ func init() {
 		// See monitorcmd.go:
 		monitorCommand,
 		// See accountcmd.go:
+		// 지갑과 계정의 생성, 불러오기, 갱신
 		accountCommand,
 		walletCommand,
 		// See consolecmd.go:

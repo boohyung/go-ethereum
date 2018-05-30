@@ -186,6 +186,12 @@ func (config *TxPoolConfig) sanitize() TxPoolConfig {
 // The pool separates processable transactions (which can be applied to the
 // current state) and future transactions. Transactions move between those
 // two states over time as they are received and processed.
+// 트렌젝션 풀은 현재까지 알려진 모든 트렌젝션을 포함한다.
+// 네트워크를 통해 수신되거나, 로컬하게 생성된 트렌젝션이 풀에 들어가게 된다.
+// 트렌젝션이 블록체인에 포함되면, 풀에서 나가게 된다.
+
+//풀은 현재 상태에 적용가능한 처리가능 트렌젝션과 퓨처트렌젝션으로 나뉜다.
+// 트렌젝션들은 그들의 수신/처리에 따라 이 두 스테이트를 오간다
 type TxPool struct {
 	config       TxPoolConfig
 	chainconfig  *params.ChainConfig
@@ -203,6 +209,7 @@ type TxPool struct {
 	currentMaxGas uint64              // Current gas limit for transaction caps
 
 	locals  *accountSet // Set of local transaction to exempt from eviction rules
+	// 로컬트렌젝션을 디스크 백업할 저널
 	journal *txJournal  // Journal of local transaction to back up to disk
 
 	pending map[common.Address]*txList         // All currently processable transactions
@@ -266,7 +273,7 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 // loop is the transaction pool's main event loop, waiting for and reacting to
 // outside blockchain events as well as for various reporting and transaction
 // eviction events.
-// 트렉젠션 풀의 메인 루프로서 다양한 레포팅이나 트렌젝션 퇴거등의 
+// 트렌젝션 풀의 메인 루프로서 다양한 레포팅이나 트렌젝션 퇴거 뿐만 아니라 
 // 외부 불록체인 이벤트를 기다리거나 반응한다
 func (pool *TxPool) loop() {
 	defer pool.wg.Done()
@@ -772,6 +779,7 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *types.T
 // AddLocal enqueues a single transaction into the pool if it is valid, marking
 // the sender as a local one in the mean time, ensuring it goes around the local
 // pricing constraints.
+// 이 함수는 문제가 없는 하나의 트렌젝션을 풀에 넣는다 
 func (pool *TxPool) AddLocal(tx *types.Transaction) error {
 	return pool.addTx(tx, !pool.config.NoLocals)
 }
@@ -798,6 +806,7 @@ func (pool *TxPool) AddRemotes(txs []*types.Transaction) []error {
 }
 
 // addTx enqueues a single transaction into the pool if it is valid.
+// 이 함수는 문제가 없는 하나의 트렌젝션을 풀에 넣는다 
 func (pool *TxPool) addTx(tx *types.Transaction, local bool) error {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()

@@ -117,6 +117,7 @@ func defaultNodeConfig() node.Config {
 	return cfg
 }
 
+// account manager 만 설정된 노드가 리턴
 func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 	// Load defaults.
 	cfg := gethConfig{
@@ -140,6 +141,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 
 	// Apply flags.
 	utils.SetNodeConfig(ctx, &cfg.Node)
+	// p2p 노드를 만들고 프로토콜을 준비한다.
 	// account manager 만 설정된 노드가 리턴
 	stack, err := node.New(&cfg.Node)
 	if err != nil {

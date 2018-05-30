@@ -362,6 +362,7 @@ func (s *PrivateAccountAPI) signTransaction(ctx context.Context, args SendTxArgs
 // SendTransaction will create a transaction from the given arguments and
 // tries to sign it with the key associated with args.To. If the given passwd isn't
 // able to decrypt the key it fails.
+// 이함수는 주어진 파라미터들로 트렌젝션을 만들고 사인한 후 tx pool에 전달하는 함수이다
 func (s *PrivateAccountAPI) SendTransaction(ctx context.Context, args SendTxArgs, passwd string) (common.Hash, error) {
 	if args.Nonce == nil {
 		// Hold the addresse's mutex around signing to prevent concurrent assignment of
@@ -471,6 +472,7 @@ func (s *PrivateAccountAPI) EcRecover(ctx context.Context, data, sig hexutil.Byt
 
 // SignAndSendTransaction was renamed to SendTransaction. This method is deprecated
 // and will be removed in the future. It primary goal is to give clients time to update.
+// 이함수는 주어진 파라미터들로 트렌젝션을 만들고 사인한 후 tx pool에 전달하는 함수이다
 func (s *PrivateAccountAPI) SignAndSendTransaction(ctx context.Context, args SendTxArgs, passwd string) (common.Hash, error) {
 	return s.SendTransaction(ctx, args, passwd)
 }
@@ -1170,6 +1172,7 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 }
 
 // submitTransaction is a helper function that submits tx to txPool and logs a message.
+// 이함수는 트렌젝션을 tx pool로 전달하는 함수이다
 func submitTransaction(ctx context.Context, b Backend, tx *types.Transaction) (common.Hash, error) {
 	if err := b.SendTx(ctx, tx); err != nil {
 		return common.Hash{}, err
@@ -1190,6 +1193,7 @@ func submitTransaction(ctx context.Context, b Backend, tx *types.Transaction) (c
 
 // SendTransaction creates a transaction for the given argument, sign it and submit it to the
 // transaction pool.
+// 이함수는 주어진 파라미터들로 트렌젝션을 만들고 사인한 후 tx pool에 전달하는 함수이다
 func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args SendTxArgs) (common.Hash, error) {
 
 	// Look up the wallet containing the requested signer
@@ -1227,6 +1231,7 @@ func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args Sen
 
 // SendRawTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
+// 이함수는 사인된 트렌젝션을 tx pool에 추가하는 함수이다
 func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encodedTx hexutil.Bytes) (common.Hash, error) {
 	tx := new(types.Transaction)
 	if err := rlp.DecodeBytes(encodedTx, tx); err != nil {

@@ -213,20 +213,28 @@ func (pm *ProtocolManager) removePeer(id string) {
 	}
 }
 
+// 프로토콜 매니져 시작
 func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.maxPeers = maxPeers
 
 	// broadcast transactions
+	// 트렌젝션을 브로드 캐스팅한다
 	pm.txsCh = make(chan core.NewTxsEvent, txChanSize)
 	pm.txsSub = pm.txpool.SubscribeNewTxsEvent(pm.txsCh)
 	go pm.txBroadcastLoop()
 
 	// broadcast mined blocks
+	//마이닝된 블럭을 브로드캐스팅한다
 	pm.minedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
 	go pm.minedBroadcastLoop()
 
 	// start sync handlers
+	// 싱크 핸들러들을 시작한다
+	// 주기적으로 네트워크와 동기화 하고, 해시와 블록을 다운로드한다
 	go pm.syncer()
+	// 새로운 커넥션에 대한 초기 트렌젝션을 관리한다
+	// 새로운 피어가 나타나면 현재까지 펜딩된 트렌젝션을 릴레이 한다
+	// 네트워크 밴드위스 관리를 위해 각 피어에 트렌젝션을 쪼개서 보낸다
 	go pm.txsyncLoop()
 }
 
@@ -695,6 +703,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 // BroadcastBlock will either propagate a block to a subset of it's peers, or
 // will only announce it's availability (depending what's requested).
+// 피어의 서브셋에게 블록을 전달하거나, 블록의 사용가능성 여부를 알린다
 func (pm *ProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
 	hash := block.Hash()
 	peers := pm.peers.PeersWithoutBlock(hash)
@@ -728,6 +737,7 @@ func (pm *ProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
 
 // BroadcastTxs will propagate a batch of transactions to all peers which are not known to
 // already have the given transaction.
+// 이 함수는 여러개의 트렌젝션을 아직 해당 트렌젝션을 모르는 피어들에게 퍼뜨린다
 func (pm *ProtocolManager) BroadcastTxs(txs types.Transactions) {
 	var txset = make(map[*peer]types.Transactions)
 
@@ -741,6 +751,7 @@ func (pm *ProtocolManager) BroadcastTxs(txs types.Transactions) {
 	}
 	// FIXME include this again: peers = peers[:int(math.Sqrt(float64(len(peers))))]
 	for peer, txs := range txset {
+		// 트렌젝션을 피어로 전송한다
 		peer.SendTransactions(txs)
 	}
 }
@@ -757,6 +768,7 @@ func (pm *ProtocolManager) minedBroadcastLoop() {
 	}
 }
 
+// 프로토콜 매니져의 txs채널에서 이벤트가 오는지 감지하여 브로드캐스트 한다
 func (pm *ProtocolManager) txBroadcastLoop() {
 	for {
 		select {

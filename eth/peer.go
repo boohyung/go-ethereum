@@ -133,6 +133,7 @@ func (p *peer) MarkTransaction(hash common.Hash) {
 
 // SendTransactions sends transactions to the peer and includes the hashes
 // in its transaction hash set for future reference.
+// 트렌젝션을 피어로 전송한다
 func (p *peer) SendTransactions(txs types.Transactions) error {
 	for _, tx := range txs {
 		p.knownTxs.Add(tx.Hash())

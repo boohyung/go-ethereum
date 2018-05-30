@@ -62,6 +62,9 @@ func (pm *ProtocolManager) syncTransactions(p *peer) {
 // connection. When a new peer appears, we relay all currently pending
 // transactions. In order to minimise egress bandwidth usage, we send
 // the transactions in small packs to one peer at a time.
+// 이 함수는 새로운 커넥션에 대한 초기 트렌젝션을 관리한다
+// 새로운 피어가 나타나면 현재까지 펜딩된 트렌젝션을 릴레이 한다
+// 네트워크 밴드위스 관리를 위해 각 피어에 트렌젝션을 쪼개서 보낸다
 func (pm *ProtocolManager) txsyncLoop() {
 	var (
 		pending = make(map[discover.NodeID]*txsync)

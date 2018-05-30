@@ -176,12 +176,15 @@ func (c *BoundContract) Transact(opts *TransactOpts, method string, params ...in
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
+// 펀드를 계약으로 옮기기 위한 첫 트렉젝션을 시작한다 
 func (c *BoundContract) Transfer(opts *TransactOpts) (*types.Transaction, error) {
 	return c.transact(opts, &c.address, nil)
 }
 
 // transact executes an actual transaction invocation, first deriving any missing
 // authorization fields, and then scheduling the transaction for execution.
+// 이 함수는 실제 트렌젝션을 발동시킨다.
+// 첫 스텝을 비어있는 인증필드를 채우고, 실행을 위해 트렌젝션을 스케쥴링 한다.
 func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, error) {
 	var err error
 
