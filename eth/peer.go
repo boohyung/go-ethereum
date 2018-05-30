@@ -133,11 +133,18 @@ func (p *peer) MarkTransaction(hash common.Hash) {
 
 // SendTransactions sends transactions to the peer and includes the hashes
 // in its transaction hash set for future reference.
+// geth cli에서 transaction을 보낼때 사용하는 함수
+// eth.SendTransaction(from,to,value) 형태로 사용한다
 // 트렌젝션을 피어로 전송한다
 func (p *peer) SendTransactions(txs types.Transactions) error {
 	for _, tx := range txs {
+		// 내가 알고있는 트렌젝션 세트에 보낼 트렌젝션의 해시를 추가함
 		p.knownTxs.Add(tx.Hash())
 	}
+	//TxMsg는 이더리움 프로토콜의 메시지 코드
+	// 트렌젝션들을 RLP로 인코딩하고, 인코딩된 메시지를 보낸다
+	// 기본 메시지 리드라이터로 메시지를 쓰고, message sent 메시지를 feed에 씀으로서
+	// 이벤트를 구독중인 피어에게 브로드 캐스팅한다
 	return p2p.Send(p.rw, TxMsg, txs)
 }
 

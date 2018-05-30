@@ -89,6 +89,7 @@ type MsgReadWriter interface {
 
 // Send writes an RLP-encoded message with the given code.
 // data should encode as an RLP list.
+// 트렌젝션들을 RLP로 인코딩하고, 인코딩된 메시지를 보낸다
 func Send(w MsgWriter, msgcode uint64, data interface{}) error {
 	size, r, err := rlp.EncodeToReader(data)
 	if err != nil {
@@ -287,6 +288,8 @@ func (ev *msgEventer) ReadMsg() (Msg, error) {
 
 // WriteMsg writes a message to the underlying MsgReadWriter and emits a
 // "message sent" event
+// 이 함수는 기본 메시지 리드라이터로 메시지를 쓰고, message sent 메시지를 feed에 씀으로서
+// 이벤트를 구독중인 피어에게 브로드 캐스팅한다
 func (ev *msgEventer) WriteMsg(msg Msg) error {
 	err := ev.MsgReadWriter.WriteMsg(msg)
 	if err != nil {
