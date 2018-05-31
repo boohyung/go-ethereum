@@ -15,6 +15,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package fetcher contains the block announcement based synchronisation.
+// 페쳐 패키지는 싱크 베이스의 블록알림기능(어나운스먼트)를 포함한다.
 package fetcher
 
 import (
@@ -69,6 +70,7 @@ type peerDropFn func(id string)
 
 // announce is the hash notification of the availability of a new block in the
 // network.
+// 어나운스는 네트워크상에 새 블록의 가용성의 해쉬 알림이다
 type announce struct {
 	hash   common.Hash   // Hash of the block being announced
 	number uint64        // Number of the block being announced (0 = unknown | old protocol)
@@ -105,6 +107,8 @@ type inject struct {
 
 // Fetcher is responsible for accumulating block announcements from various peers
 // and scheduling them for retrieval.
+// fetcher는 여러 피어로 부터 발생한 블록알림을 누적하고, 
+// 반환을 위해 스케쥴링하는것을 담당한다
 type Fetcher struct {
 	// Various event channels
 	notify chan *announce
@@ -277,6 +281,7 @@ func (f *Fetcher) FilterBodies(peer string, transactions [][]*types.Transaction,
 
 // Loop is the main fetcher loop, checking and processing various notification
 // events.
+// fetcher의 메인 루프로서 여러 노티이벤트를 체크하고 프로세싱한다
 func (f *Fetcher) loop() {
 	// Iterate the block fetching until a quit is requested
 	fetchTimer := time.NewTimer(0)
@@ -284,12 +289,14 @@ func (f *Fetcher) loop() {
 
 	for {
 		// Clean up any expired block fetches
+		// 타임아웃된 블록을 지운다
 		for hash, announce := range f.fetching {
 			if time.Since(announce.time) > fetchTimeout {
 				f.forgetHash(hash)
 			}
 		}
 		// Import any queued blocks that could potentially fit
+		// 적절해보이는 큐잉된 블록을 가져온다
 		height := f.chainHeight()
 		for !f.queue.Empty() {
 			op := f.queue.PopItem().(*inject)
@@ -311,6 +318,7 @@ func (f *Fetcher) loop() {
 				f.forgetBlock(hash)
 				continue
 			}
+			// 블록 삽입
 			f.insert(op.origin, op.block)
 		}
 		// Wait for an outside event to occur
@@ -636,6 +644,9 @@ func (f *Fetcher) enqueue(peer string, block *types.Block) {
 // insert spawns a new goroutine to run a block insertion into the chain. If the
 // block's number is at the same height as the current import phase, it updates
 // the phase states accordingly.
+// 이함수는 블록을 체인에 넣기 위한 새로운 고루틴을 생성한다. 
+// 만약 블록넘버가 현재 가져온 페이즈의 높이와 같을 경우 
+// 그에 맞춰 페이즈 스테이트를 업데이트 한다 
 func (f *Fetcher) insert(peer string, block *types.Block) {
 	hash := block.Hash()
 

@@ -239,6 +239,8 @@ func (p *peer) RequestReceipts(hashes []common.Hash) error {
 
 // Handshake executes the eth protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
+// 핸드세이크는 이더리움 프로토콜의 핸드쉐이크를 실행한다.
+// 버전 번호와 네트워크ID, 난이도, 헤드와 제네시스 블록을 협상한다
 func (p *peer) Handshake(network uint64, td *big.Int, head common.Hash, genesis common.Hash) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)

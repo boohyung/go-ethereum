@@ -15,6 +15,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package downloader contains the manual full chain synchronisation.
+// 이 패키지는 수동적인 풀체인 동기화를 제공한다
 package downloader
 
 import (
@@ -342,6 +343,9 @@ func (d *Downloader) Synchronise(id string, head common.Hash, td *big.Int, mode 
 // synchronise will select the peer and use it for synchronising. If an empty string is given
 // it will use the best peer possible and synchronize if its TD is higher than our own. If any of the
 // checks fail an error will be returned. This method is synchronous
+// 이함수는 피어를 선택하여 동기화에 이용한다. 만약 빈 문자열이 주어진다면
+// 우리 TD보다 높은 베스트 피어를 선택하여 동기화 한다.
+// 하나라도 실패하면 에러가 반환된다
 func (d *Downloader) synchronise(id string, hash common.Hash, td *big.Int, mode SyncMode) error {
 	// Mock out the synchronisation if testing
 	if d.synchroniseMock != nil {
