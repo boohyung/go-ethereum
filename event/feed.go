@@ -72,6 +72,8 @@ func (f *Feed) init() {
 // until the subscription is canceled. All channels added must have the same element type.
 //
 // 전달된 채널을 피드로 등록한다
+// 이후에 보내지는 데이터들은 구독이 취소돌때까지 이 채널로 전달될 것이다. 
+// 모든 채널은 동일한 원소타입을 가져야 한다
 // The channel should have ample buffer space to avoid blocking other subscribers.
 // Slow subscribers are not dropped.
 func (f *Feed) Subscribe(channel interface{}) Subscription {

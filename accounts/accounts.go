@@ -130,7 +130,7 @@ type Wallet interface {
 
 // Backend is a "wallet provider" that may contain a batch of accounts they can
 // sign transactions with and upon request, do so.
-// 백엔드는 지갑 제공자인데 트렌젝션에 사인가능한 여러 어카운트의 모임이다.
+// 백엔드 인터페이스는 지갑 제공자인데 트렌젝션에 사인가능한 여러 어카운트의 모임이다.
 // 지갑과 지갑이벤트 구독기능을 구현한 인터페이스
 type Backend interface {
 	// Wallets retrieves the list of wallets the backend is currently aware of.
@@ -147,6 +147,7 @@ type Backend interface {
 
 	// Subscribe creates an async subscription to receive notifications when the
 	// backend detects the arrival or departure of a wallet.
+	// 구독함수는 백엔드가 지갑의 도착/떠남을 감지하기 위한 비동기 구독을 생성한다
 	Subscribe(sink chan<- WalletEvent) event.Subscription
 }
 
@@ -157,10 +158,13 @@ type WalletEventType int
 const (
 	// WalletArrived is fired when a new wallet is detected either via USB or via
 	// a filesystem event in the keystore.
+	// 지갑 도착 이벤트는 usb나 키스토어의 파일시스템에 새로운 지갑이 감지되었을때 발생한다
 	WalletArrived WalletEventType = iota
 
 	// WalletOpened is fired when a wallet is successfully opened with the purpose
 	// of starting any background processes such as automatic key derivation.
+	// 지갑 오픈은 자동 유도키 같은 백그라운드 프로세스가 
+	// 시작되기위해 성공적으로 열렸을 경우 발생한다
 	WalletOpened
 
 	// WalletDropped
@@ -169,6 +173,7 @@ const (
 
 // WalletEvent is an event fired by an account backend when a wallet arrival or
 // departure is detected.
+// 지갑 이벤트는 지갑이 도착//떠남이 감지되었을때 어카운트 백엔드에 의해 발생한다
 type WalletEvent struct {
 	Wallet Wallet          // Wallet instance arrived or departed
 	Kind   WalletEventType // Event type that happened in the system

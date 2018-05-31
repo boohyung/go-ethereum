@@ -212,6 +212,8 @@ func (s *resubscribeSub) backoffWait() bool {
 // larger program.
 //
 // The zero value is ready to use.
+// 이 타입은 여러 구독을 한번에 해지하는 기능을 가지고 있다.
+// 1개 이상의 구독을 관리하기 위해 한번의 호출로 편하게 모든 구독을 해지한다.
 type SubscriptionScope struct {
 	mu     sync.Mutex
 	subs   map[*scopeSub]struct{}
@@ -226,6 +228,8 @@ type scopeSub struct {
 // Track starts tracking a subscription. If the scope is closed, Track returns nil. The
 // returned subscription is a wrapper. Unsubscribing the wrapper removes it from the
 // scope.
+// 이 함수는 구독을 트랙킹한다. 스코프가 닫혔을 경우 nil을 리턴한다.
+// 리턴된 구독은 래퍼이다. 이 레퍼를 구독해지하면 스코프에서 제거된다.
 func (sc *SubscriptionScope) Track(s Subscription) Subscription {
 	sc.mu.Lock()
 	defer sc.mu.Unlock()

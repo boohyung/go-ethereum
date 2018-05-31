@@ -344,6 +344,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		}
 	}
 	// Register wallet event handlers to open and auto-derive wallets
+	// 키스토어 지갑의 추가/삭제에 대한 알람을 받을 채널 
 	events := make(chan accounts.WalletEvent, 16)
 	stack.AccountManager().Subscribe(events)
 
@@ -364,6 +365,8 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 			}
 		}
 		// Listen for wallet event till termination
+		// 종료될때까지 지갑 이벤트 수신 대기
+		// 채널을 닫지 않기 때문에 range에서 루프 효과가 난다
 		for event := range events {
 			switch event.Kind {
 			case accounts.WalletArrived:

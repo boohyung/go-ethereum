@@ -353,6 +353,7 @@ func CalcUncleHash(uncles []*Header) common.Hash {
 
 // WithSeal returns a new block with the data from b but the header replaced with
 // the sealed one.
+// 이 함수는 데이터는 그대로 두고, 헤더만 봉인된 헤더로 교체하여 블록을 리턴한다 
 func (b *Block) WithSeal(header *Header) *Block {
 	cpy := *header
 

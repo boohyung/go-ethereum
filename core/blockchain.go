@@ -292,6 +292,9 @@ func (bc *BlockChain) loadLastState() error {
 // above the new head will be deleted and the new one set. In the case of blocks
 // though, the head may be further rewound if block bodies are missing (non-archive
 // nodes after a fast sync).
+// 이 함수는 로컬체인을 새로운 해드로 되돌린다.
+// 헤더들의 경우 뉴 헤드 위쪽의 모든 헤더는 모두 삭제되고 새로운 헤더가 설정될 것이다.
+// 블록의 경우, 블록 바디가 없을 경우 좀더 되돌려진다.
 func (bc *BlockChain) SetHead(head uint64) error {
 	log.Warn("Rewinding blockchain", "target", head)
 
@@ -343,6 +346,7 @@ func (bc *BlockChain) SetHead(head uint64) error {
 
 // FastSyncCommitHead sets the current head block to the one defined by the hash
 // irrelevant what the chain contents were prior.
+// 현재 해드블록을 해시와 무관한 체인 컨텐츠를 중시하는 블록으로 설정한다.
 func (bc *BlockChain) FastSyncCommitHead(hash common.Hash) error {
 	// Make sure that both the block as well at its state trie exists
 	block := bc.GetBlockByHash(hash)
@@ -368,17 +372,22 @@ func (bc *BlockChain) GasLimit() uint64 {
 
 // CurrentBlock retrieves the current head block of the canonical chain. The
 // block is retrieved from the blockchain's internal cache.
+// 이 함수는 캐노니컬 체인의 해드블록을 반환한다. 
+// 이불록은 블록체인의 내부 캐시로부터 반환된다
 func (bc *BlockChain) CurrentBlock() *types.Block {
 	return bc.currentBlock.Load().(*types.Block)
 }
 
 // CurrentFastBlock retrieves the current fast-sync head block of the canonical
 // chain. The block is retrieved from the blockchain's internal cache.
+// 이 함수는 캐노니컬 체인의 패스트 싱크 헤드 블록을 반환한다. 
+// 이 불록은 블록체인의 내부 캐시로부터 반환된다
 func (bc *BlockChain) CurrentFastBlock() *types.Block {
 	return bc.currentFastBlock.Load().(*types.Block)
 }
 
 // SetProcessor sets the processor required for making state modifications.
+// 스테이트 변경을 위해 필요한 프로세서를 설정한다
 func (bc *BlockChain) SetProcessor(processor Processor) {
 	bc.procmu.Lock()
 	defer bc.procmu.Unlock()
@@ -386,6 +395,7 @@ func (bc *BlockChain) SetProcessor(processor Processor) {
 }
 
 // SetValidator sets the validator which is used to validate incoming blocks.
+// 새로 들어온 블록의 검증을 위한 검증자를 설정한다
 func (bc *BlockChain) SetValidator(validator Validator) {
 	bc.procmu.Lock()
 	defer bc.procmu.Unlock()
@@ -407,22 +417,26 @@ func (bc *BlockChain) Processor() Processor {
 }
 
 // State returns a new mutable state based on the current HEAD block.
+// 이 함수는 현재 헤드 블록을 기반으로 새로운 변환 가능한 스테이트를 반환한다 
 func (bc *BlockChain) State() (*state.StateDB, error) {
 	return bc.StateAt(bc.CurrentBlock().Root())
 }
 
 // StateAt returns a new mutable state based on a particular point in time.
+// 이 함수는 특정시간의 한 지점을 기반으로 새로운 변환 가능한 스테이트를 반환한다 
 func (bc *BlockChain) StateAt(root common.Hash) (*state.StateDB, error) {
 	return state.New(root, bc.stateCache)
 }
 
 // Reset purges the entire blockchain, restoring it to its genesis state.
+// 전체 블록체인을 깨끗이하고 태초 상태로 되돌린다
 func (bc *BlockChain) Reset() error {
 	return bc.ResetWithGenesisBlock(bc.genesisBlock)
 }
 
 // ResetWithGenesisBlock purges the entire blockchain, restoring it to the
 // specified genesis state.
+// 전체 블록체인을 깨끗이하고 태초 상태로 되돌린다
 func (bc *BlockChain) ResetWithGenesisBlock(genesis *types.Block) error {
 	// Dump the entire block chain and purge the caches
 	if err := bc.SetHead(0); err != nil {
@@ -453,6 +467,10 @@ func (bc *BlockChain) ResetWithGenesisBlock(genesis *types.Block) error {
 //
 // This method only rolls back the current block. The current header and current
 // fast block are left intact.
+// 이 함수는 특정 스테이트가 찾아질때까지 커런트 블록을 롤백하면서 
+// 현재 블록 체인을 수정한다. 이 함수는 아직 커밋되지 않은 트라이
+// 크래시를 유발하는 미완성의 DB 쓰기 동작을 수정해야 한다
+
 func (bc *BlockChain) repair(head **types.Block) error {
 	for {
 		// Abort if we've rewound to a head block that does have associated state
@@ -500,6 +518,11 @@ func (bc *BlockChain) ExportN(w io.Writer, first uint64, last uint64) error {
 // or if they are on a different side chain.
 //
 // Note, this function assumes that the `mu` mutex is held!
+// 이 함수는 뉴 헤드 블록을 현재 블록체인에 주입한다. 
+// 이때 블록이 진짜 헤드일때를 가정한다.
+// 이 함수는 헤드의 헤더와 헤드 패스트 싱크블록이 오래되었거나 
+// 다른 사이드 체인에 있을 경우 이 블록으로 초기화 할것이다.
+
 func (bc *BlockChain) insert(block *types.Block) {
 	// If the block is on a side chain or an unknown one, force other heads onto it too
 	updateHeads := rawdb.ReadCanonicalHash(bc.db, block.NumberU64()) != block.Hash()
@@ -581,6 +604,7 @@ func (bc *BlockChain) HasState(hash common.Hash) bool {
 
 // HasBlockAndState checks if a block and associated state trie is fully present
 // in the database or not, caching it if present.
+// 이 함수는 블록과 관련된 스테이트 트라이가 DB에 모두 존재하는지 체크한다
 func (bc *BlockChain) HasBlockAndState(hash common.Hash, number uint64) bool {
 	// Check first that the block itself is known
 	block := bc.GetBlock(hash, number)
@@ -656,6 +680,7 @@ func (bc *BlockChain) GetBlocksFromHash(hash common.Hash, n int) (blocks []*type
 
 // GetUnclesInChain retrieves all the uncles from a given block backwards until
 // a specific distance is reached.
+// 이 블록의 뒷쪽 특정 거리까지 존재하는 엉클블록을 반환한다
 func (bc *BlockChain) GetUnclesInChain(block *types.Block, length int) []*types.Header {
 	uncles := []*types.Header{}
 	for i := 0; block != nil && i < length; i++ {
@@ -667,6 +692,8 @@ func (bc *BlockChain) GetUnclesInChain(block *types.Block, length int) []*types.
 
 // TrieNode retrieves a blob of data associated with a trie node (or code hash)
 // either from ephemeral in-memory cache, or from persistent storage.
+// 이 함수는 트라이 노드나 코드해시에 관련된 데이터 블롭을 반환한다.
+// 금방사라질 인메모리 캐시나 잔존하는 저장소에서
 func (bc *BlockChain) TrieNode(hash common.Hash) ([]byte, error) {
 	return bc.stateCache.TrieDB().Node(hash)
 }
@@ -809,6 +836,7 @@ func SetReceiptsData(config *params.ChainConfig, block *types.Block, receipts ty
 
 // InsertReceiptChain attempts to complete an already existing header chain with
 // transaction and receipt data.
+// 이 함수는 이미 존재하는 헤더체인을 트렌젝션과 영수증 데이터로 완성한다
 func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain []types.Receipts) (int, error) {
 	bc.wg.Add(1)
 	defer bc.wg.Done()
@@ -897,6 +925,9 @@ var lastWrite uint64
 // WriteBlockWithoutState writes only the block and its metadata to the database,
 // but does not write any state. This is used to construct competing side forks
 // up to the point where they exceed the canonical total difficulty.
+// 이 함수는 블록과 메타데이타만을 DB에 저장하고, Sate는 쓰지 않는다.
+// 이 함수는 캐노니컬 토탈 디피컬티를 초과한 사이드 포크들의 
+// 간결한 경쟁을 생성하기 위해 호출된다.
 func (bc *BlockChain) WriteBlockWithoutState(block *types.Block, td *big.Int) (err error) {
 	bc.wg.Add(1)
 	defer bc.wg.Done()
@@ -910,6 +941,7 @@ func (bc *BlockChain) WriteBlockWithoutState(block *types.Block, td *big.Int) (e
 }
 
 // WriteBlockWithState writes the block and all associated state to the database.
+// 블록과 모든 관련된 스테이트를 DB에 저장한다
 func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.Receipt, state *state.StateDB) (status WriteStatus, err error) {
 	bc.wg.Add(1)
 	defer bc.wg.Done()
@@ -1230,6 +1262,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 }
 
 // insertStats tracks and reports on block insertion.
+// 블록의 삽입을 트래킹하고 보고한다
 type insertStats struct {
 	queued, processed, ignored int
 	usedGas                    uint64
@@ -1282,6 +1315,8 @@ func countTransactions(chain []*types.Block) (c int) {
 // reorgs takes two blocks, an old chain and a new chain and will reconstruct the blocks and inserts them
 // to be part of the new canonical chain and accumulates potential missing transactions and post an
 // event about them
+// 이 함수는 두개의 블록을 재생산하여 캐노니컬 채인의 일부로 넣고,
+// 놓칠 가능성이 있는 트렌젝션을 누적한 후 그들에 대한 이벤트를 발생시킨다
 func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 	var (
 		newChain    types.Blocks
@@ -1394,6 +1429,8 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 // PostChainEvents iterates over the events generated by a chain insertion and
 // posts them into the event feed.
 // TODO: Should not expose PostChainEvents. The chain events should be posted in WriteBlock.
+// 이 함수는 체인 삽입에서 발생하는 이벤트나 이벤트 피드로 던진 이벤트들을 반복처리한다.
+// 체인이벤트는 WriteBlock함수에서 발생해야 한다.
 func (bc *BlockChain) PostChainEvents(events []interface{}, logs []*types.Log) {
 	// post event logs for further processing
 	if logs != nil {
@@ -1480,6 +1517,10 @@ Error: %v
 // should be done or not. The reason behind the optional check is because some
 // of the header retrieval mechanisms already need to verify nonces, as well as
 // because nonces can be verified sparsely, not needing to check each.
+
+// 이함수는 주어진 헤더체인을 로컬 체인에 넣으려고 노력하는데 reorg를 생성할수도 있다.
+// 만약 에러가 리턴되면 에러 로그와 함께 헤더의 인덱스 번호를 리턴한다.
+
 func (bc *BlockChain) InsertHeaderChain(chain []*types.Header, checkFreq int) (int, error) {
 	start := time.Now()
 	if i, err := bc.hc.ValidateHeaderChain(chain, checkFreq); err != nil {
@@ -1513,6 +1554,11 @@ func (bc *BlockChain) InsertHeaderChain(chain []*types.Header, checkFreq int) (i
 // without the real blocks. Hence, writing headers directly should only be done
 // in two scenarios: pure-header mode of operation (light clients), or properly
 // separated header/block phases (non-archive clients).
+// 이 함수는 헤더의 부모가 이미 알려진 헤더를 로컬체인에 쓴다.
+// 만약 새롭게 삽입할 블록헤더의 토탈 디피컬티가 지금의 것보다 커진다면
+// 캐노니컬 체인이 재 배치 된다.
+// 라이트 클라이언트의 퓨어헤더모드의 동작이거나, 
+// 헤더와 블록이 분리된 페이즈에서만 직접 부르는것이 좋다
 func (bc *BlockChain) writeHeader(header *types.Header) error {
 	bc.wg.Add(1)
 	defer bc.wg.Done()
@@ -1526,30 +1572,37 @@ func (bc *BlockChain) writeHeader(header *types.Header) error {
 
 // CurrentHeader retrieves the current head header of the canonical chain. The
 // header is retrieved from the HeaderChain's internal cache.
+// 이 함수는 캐노니컬 체인의 현재 해드블록의 헤더를 반환한다.
+// 해더는 헤더 체인의 내부 캐시로 부터 반환된다
 func (bc *BlockChain) CurrentHeader() *types.Header {
 	return bc.hc.CurrentHeader()
 }
 
 // GetTd retrieves a block's total difficulty in the canonical chain from the
 // database by hash and number, caching it if found.
+// 이 함수는 캐노니컬 체인안의 블록의 토탈 디피컬티를 
+// 해시와 블록넘버로 찾아 DB로부터 반환하고 캐싱한다
 func (bc *BlockChain) GetTd(hash common.Hash, number uint64) *big.Int {
 	return bc.hc.GetTd(hash, number)
 }
 
 // GetTdByHash retrieves a block's total difficulty in the canonical chain from the
 // database by hash, caching it if found.
+// 이 함수는 캐노니컬 체인안의 블록의 토탈 디피컬티를 해시로 찾아 DB로부터 반환하고 캐싱한다
 func (bc *BlockChain) GetTdByHash(hash common.Hash) *big.Int {
 	return bc.hc.GetTdByHash(hash)
 }
 
 // GetHeader retrieves a block header from the database by hash and number,
 // caching it if found.
+// 이 함수는 hash와 블록번호를 이용하여 DB로 부터 블록헤더를 반환하고 캐싱한다
 func (bc *BlockChain) GetHeader(hash common.Hash, number uint64) *types.Header {
 	return bc.hc.GetHeader(hash, number)
 }
 
 // GetHeaderByHash retrieves a block header from the database by hash, caching it if
 // found.
+// 이 함수는 hash호를 이용하여 DB로 부터 블록헤더를 반환하고 캐싱한다
 func (bc *BlockChain) GetHeaderByHash(hash common.Hash) *types.Header {
 	return bc.hc.GetHeaderByHash(hash)
 }
@@ -1584,11 +1637,15 @@ func (bc *BlockChain) SubscribeRemovedLogsEvent(ch chan<- RemovedLogsEvent) even
 }
 
 // SubscribeChainEvent registers a subscription of ChainEvent.
+// 체인 이벤트 구독
+// 전달된 채널을 블록체인의 피드에 추가하고 블록체인의 스코프에서 트렉킹함
 func (bc *BlockChain) SubscribeChainEvent(ch chan<- ChainEvent) event.Subscription {
 	return bc.scope.Track(bc.chainFeed.Subscribe(ch))
 }
 
 // SubscribeChainHeadEvent registers a subscription of ChainHeadEvent.
+// 체인헤드 이벤트 구독
+// 전달된 채널을 블록체인의 피드에 추가하고 블록체인의 스코프에서 트렉킹함
 func (bc *BlockChain) SubscribeChainHeadEvent(ch chan<- ChainHeadEvent) event.Subscription {
 	return bc.scope.Track(bc.chainHeadFeed.Subscribe(ch))
 }

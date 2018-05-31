@@ -260,6 +260,7 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 	}
 	// Subscribe events from blockchain
 	// 블록체인의 체인 헤드 이벤트를 구독한다
+	// 전달된 채널을 블록체인의 피드에 추가하고 블록체인의 스코프에서 트렉킹함
 	pool.chainHeadSub = pool.chain.SubscribeChainHeadEvent(pool.chainHeadCh)
 
 	// Start the event loop and return
@@ -297,6 +298,7 @@ func (pool *TxPool) loop() {
 	for {
 		select {
 		// Handle ChainHeadEvent
+		// 블록체인에서 체인 헤드 이벤트 발생
 		case ev := <-pool.chainHeadCh:
 			if ev.Block != nil {
 				pool.mu.Lock()

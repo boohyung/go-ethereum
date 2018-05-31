@@ -43,10 +43,7 @@ type Manager struct {
 // supported backends.
 // 다양한 백엔드들의 트렌젝션에 사인을 하기 위한 일반적인 계정관리자를 생성한다.
 // 모든 백엔드로부터 지갑 노티를 받기 위해 채널을 생성하고
-// 각 백엔드에 해당 채널을 전닳하여 구독한다
-
-
-
+// 각 백엔드에 해당 채널을 전달하여 구독한다
 func NewManager(backends ...Backend) *Manager {
 	// Retrieve the initial list of wallets from the backends and sort by URL
 	var wallets []Wallet
@@ -58,13 +55,13 @@ func NewManager(backends ...Backend) *Manager {
 
 	subs := make([]event.Subscription, len(backends))
 	for i, backend := range backends {
-		// 백엔드들이 updates 이벤트에 자신을 등록함
+		// 백엔드들이 feed에 사용할 채널을 전달한다
 		subs[i] = backend.Subscribe(updates)
 	}
 	// Assemble the account manager and return
 	am := &Manager{
 		backends: make(map[reflect.Type][]Backend),
-		updaters: subs, //
+		updaters: subs, //이벤트를 업데이트 하는 백엔드들
 		updates:  updates,
 		wallets:  wallets,
 		quit:     make(chan chan error),
