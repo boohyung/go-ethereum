@@ -15,6 +15,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package bmt provides a binary merkle tree implementation
+// bmt 패키지는 바이너리 머클트리 구현을 제공한다
 package bmt
 
 import (
