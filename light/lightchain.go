@@ -46,6 +46,9 @@ var (
 // LightChain represents a canonical chain that by default only handles block
 // headers, downloading block bodies and receipts on demand through an ODR
 // interface. It only does header validation during chain insertion.
+// 라이트 체인은 기본적으로 캐노니컬 채인을 나타내지만 헤더블록만을 관리하고
+// ODR 인터페이스를 통해 블록보디와 영수증을 온디멘드로 다운로드 한다.
+// 체인의 삽입은 헤더 검증만 이루어 진다
 type LightChain struct {
 	hc            *core.HeaderChain
 	chainDb       ethdb.Database
