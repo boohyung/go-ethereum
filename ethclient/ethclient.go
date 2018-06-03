@@ -33,6 +33,7 @@ import (
 )
 
 // Client defines typed wrappers for the Ethereum RPC API.
+// Client 구조체는 이더리움 RPC API를 위해 정의되었음
 type Client struct {
 	c *rpc.Client
 }

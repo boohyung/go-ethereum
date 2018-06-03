@@ -75,6 +75,8 @@ type WatchOpts struct {
 // BoundContract is the base wrapper object that reflects a contract on the
 // Ethereum network. It contains a collection of methods that are used by the
 // higher level contract bindings to operate.
+// BoundContract 구조체는 이더리움 네트워크의 계약을 반양하는 기본 포괄 오브젝트이다.
+// 이 오브젝트내의 함수들은  네트 워크에 연결된 고수준의 계약에 의해 사용된다 
 type BoundContract struct {
 	address    common.Address     // Deployment address of the contract on the Ethereum blockchain
 	abi        abi.ABI            // Reflect based ABI to access the correct Ethereum methods

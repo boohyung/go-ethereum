@@ -179,6 +179,8 @@ func New(getBlock blockRetrievalFn, verifyHeader headerVerifierFn, broadcastBloc
 
 // Start boots up the announcement based synchroniser, accepting and processing
 // hash notifications and block fetches until termination requested.
+// 이함수는 어나운스 기반의 동기화를 시작하며 
+// 종료되기 전까지 해시노티와 블록 패치를 수락하고 처리한다
 func (f *Fetcher) Start() {
 	go f.loop()
 }
@@ -191,6 +193,7 @@ func (f *Fetcher) Stop() {
 
 // Notify announces the fetcher of the potential availability of a new block in
 // the network.
+// Notify 함수는 네트워크에 새블록이 존재할 가능성을 알린다
 func (f *Fetcher) Notify(peer string, hash common.Hash, number uint64, time time.Time,
 	headerFetcher headerRequesterFn, bodyFetcher bodyRequesterFn) error {
 	block := &announce{

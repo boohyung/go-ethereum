@@ -113,6 +113,8 @@ const (
 
 // blockChain provides the state of blockchain and current gas limit to do
 // some pre checks in tx pool and event subscribers.
+// 블록체인 인터페이스는 txpool과 이벤트 등록자들이 어떤 선행 검증을 할수 있도록
+// 블록체인의 상태와 현재 가스 리밋을 제공한다
 type blockChain interface {
 	CurrentBlock() *types.Block
 	GetBlock(hash common.Hash, number uint64) *types.Block
@@ -123,7 +125,9 @@ type blockChain interface {
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
 type TxPoolConfig struct {
+	// 로컬 트렌젝션을 처리하지 않음
 	NoLocals  bool          // Whether local transaction handling should be disabled
+	// 노드가 재시작되더라도 생존하기 위한 로컬 트렌젝션의 저널
 	Journal   string        // Journal of local transactions to survive node restarts
 	Rejournal time.Duration // Time interval to regenerate the local transaction journal
 
@@ -135,6 +139,7 @@ type TxPoolConfig struct {
 	AccountQueue uint64 // Maximum number of non-executable transaction slots permitted per account
 	GlobalQueue  uint64 // Maximum number of non-executable transaction slots for all accounts
 
+	// 실행가능하지 않은 트렌잭션이 큐된 최대 시간
 	Lifetime time.Duration // Maximum amount of time non-executable transaction are queued
 }
 
@@ -509,6 +514,8 @@ func (pool *TxPool) Stats() (int, int) {
 
 // stats retrieves the current pool stats, namely the number of pending and the
 // number of queued (non-executable) transactions.
+// stats 함수는 현재 펜딩된 트렌젝션의 수와 
+// 큐된(실행 가능하지 않은) 트렌젝션의 수를 반환한다
 func (pool *TxPool) stats() (int, int) {
 	pending := 0
 	for _, list := range pool.pending {

@@ -225,6 +225,7 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 
 	// broadcast mined blocks
 	//마이닝된 블럭을 브로드캐스팅한다
+	// 프로토콜 매니저의 이벤트 먹스에 마이닝 블록 이벤트를 구독한다
 	pm.minedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
 	go pm.minedBroadcastLoop()
 
@@ -270,6 +271,8 @@ func (pm *ProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter) *p
 
 // handle is the callback invoked to manage the life cycle of an eth peer. When
 // this function terminates, the peer is disconnected.
+// handle 함수는 이더리움 피어의 인생주기를 관리하기 위해 생성된 콜백함수이다
+// 이함수가 끝나면 피어의 연결이 끊긴다.
 func (pm *ProtocolManager) handle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
@@ -757,6 +760,8 @@ func (pm *ProtocolManager) BroadcastTxs(txs types.Transactions) {
 }
 
 // Mined broadcast loop
+// 마이닝된 블록에 대한 구독채널에서 이벤트가 발생한경우
+// 브로드캐스팅한다
 func (pm *ProtocolManager) minedBroadcastLoop() {
 	// automatically stops if unsubscribe
 	for obj := range pm.minedBlockSub.Chan() {
