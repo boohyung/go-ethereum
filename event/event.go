@@ -15,6 +15,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package event deals with subscriptions to real-time events.
+// event패키지는 실시간 이벤트에 대한 구독을 관리한다
 package event
 
 import (
@@ -50,6 +51,8 @@ var ErrMuxClosed = errors.New("event: mux closed")
 // Subscribe creates a subscription for events of the given types. The
 // subscription's channel is closed when it is unsubscribed
 // or the mux is closed.
+// Subscribe 함수는 주어진 타입의 이벤트를 위한 구독을 생성한다.
+// 구독의 채널은 구독해지나 먹스가 닫히게 되면 닫힌다.
 func (mux *TypeMux) Subscribe(types ...interface{}) *TypeMuxSubscription {
 	sub := newsub(mux)
 	mux.mutex.Lock()

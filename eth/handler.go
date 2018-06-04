@@ -681,6 +681,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	case msg.Code == TxMsg:
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
+		// txpool에 local하게 adding된 tx가 브로드캐스팅된경우 처리하는 함수
 		if atomic.LoadUint32(&pm.acceptTxs) == 0 {
 			break
 		}

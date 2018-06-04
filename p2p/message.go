@@ -250,6 +250,7 @@ func ExpectMsg(r MsgReader, code uint64, content interface{}) error {
 
 // msgEventer wraps a MsgReadWriter and sends events whenever a message is sent
 // or received
+// msgEventer는 MsgReadWriter를 포함하며 메시지 수신/발신에 관계업이 이벤트를 전송한다
 type msgEventer struct {
 	MsgReadWriter
 

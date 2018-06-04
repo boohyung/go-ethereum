@@ -834,6 +834,7 @@ func (pool *TxPool) addTx(tx *types.Transaction, local bool) error {
 }
 
 // addTxs attempts to queue a batch of transactions if they are valid.
+// addTxs는 여러개의 트렌젝션을 큐한다
 func (pool *TxPool) addTxs(txs []*types.Transaction, local bool) []error {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
@@ -843,6 +844,7 @@ func (pool *TxPool) addTxs(txs []*types.Transaction, local bool) []error {
 
 // addTxsLocked attempts to queue a batch of transactions if they are valid,
 // whilst assuming the transaction pool lock is already held.
+// addTxsLocked는 여러개의 트렌젝션을 큐한다
 func (pool *TxPool) addTxsLocked(txs []*types.Transaction, local bool) []error {
 	// Add the batch of transaction, tracking the accepted ones
 	dirty := make(map[common.Address]struct{})

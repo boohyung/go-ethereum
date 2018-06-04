@@ -83,3 +83,15 @@ core/tx_pool.go : AddLocal, AddRemove -> addTx -> pool.add
 
 internal/ethapi/api.go: SendTransacton->submitTransaction
 internal/ethapi/api.go: SendRawTransacton->submitTransaction
+
+
+
+
+//트렌젝션이 공유되는 시퀀스
+로컬(private account)이나 RPC(PublicTransactionPool)을 통해 SendTrasaction함수가 호출될 경우
+local tx pool에 해당 트렌젝션을 추가하고 feed로 새로운 트렌젝션을 추가를 알리면,
+노드 실행시 동작하던 broadcast 루프에서 감지하여 등록된 피어중 해당 트렌젝션을 모르는 피어에게
+다시 SendTransaction을 하게 되고, 이는 p2p RLPx를 통해 인코딩 된후 TxMsg로 전송된다.
+피어들은 생성시 동작시킨 handleMsg루프에서 해당 메시지를 읽고, pool.addRemote함수로 
+자신의 풀에 해당 트렌젝션을 등록한다.
+

@@ -201,6 +201,9 @@ func (s *PublicAccountAPI) Accounts() []common.Address {
 // PrivateAccountAPI provides an API to access accounts managed by this node.
 // It offers methods to create, (un)lock en list accounts. Some methods accept
 // passwords and are therefore considered private by default.
+// PrivateAccountAPI는 이 노드에 의해 관리되는 어카운트에 접속가능한 API를 제공한다.
+// 생성과 락/언락을 제공함다
+// 어떤 함수들은 암호를 요구하며, 그러므로 private가 디폴트로 고려된다
 type PrivateAccountAPI struct {
 	am        *accounts.Manager
 	nonceLock *AddrLocker
@@ -936,6 +939,7 @@ func newRPCTransactionFromBlockHash(b *types.Block, hash common.Hash) *RPCTransa
 }
 
 // PublicTransactionPoolAPI exposes methods for the RPC interface
+// PublicTransacionPoolAPI는 RPC 인터페이스를 위한 함수들을 노출한다
 type PublicTransactionPoolAPI struct {
 	b         Backend
 	nonceLock *AddrLocker
