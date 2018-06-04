@@ -95,3 +95,38 @@ local tx pool에 해당 트렌젝션을 추가하고 feed로 새로운 트렌젝
 피어들은 생성시 동작시킨 handleMsg루프에서 해당 메시지를 읽고, pool.addRemote함수로 
 자신의 풀에 해당 트렌젝션을 등록한다.
 
+
+//노드간 통신연결
+MakeFullNode에서 이더리움 프로토콜 매니져를 생성하면서
+서브프로토콜로 P2P를 등록함(이때 p2p 핸들러로 Run함수를 저장)
+
+StartNode에서 p2pServer가 스타트하게 되며 동시에 2가지 고루틴을 생성
+1. Peer connection에 대한 Listening
+2. dial(discovery:udp, transport: tcp)
+
+
+새로운 노드의 dial이 성공하면 상대노드의 listning loop에서 accept를 하게 되고
+양쪽 모두 setupConn 함수를 호출하게 되며
+이때 peer를 생성하면서 p2p핸들러인 run함수가 호출된다
+
+run함수 내부는
+HandleMsg의 루프이며 ethereum 프로토콜 메시지가 전송되게 된다
+
+// eth protocol message codes
+const (
+	// Protocol messages belonging to eth/62
+	StatusMsg          = 0x00
+	NewBlockHashesMsg  = 0x01
+	TxMsg              = 0x02
+	GetBlockHeadersMsg = 0x03
+	BlockHeadersMsg    = 0x04
+	GetBlockBodiesMsg  = 0x05
+	BlockBodiesMsg     = 0x06
+	NewBlockMsg        = 0x07
+
+	// Protocol messages belonging to eth/63
+	GetNodeDataMsg = 0x0d
+	NodeDataMsg    = 0x0e
+	GetReceiptsMsg = 0x0f
+	ReceiptsMsg    = 0x10
+)
