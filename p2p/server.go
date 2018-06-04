@@ -884,6 +884,8 @@ func (srv *Server) checkpoint(c *conn, stage chan<- *conn) error {
 // runPeer runs in its own goroutine for each peer.
 // it waits until the Peer logic returns and removes
 // the peer.
+// runPeer함수는 각 피어를 위해 고유의 go 루틴에서 실행된다.
+
 func (srv *Server) runPeer(p *Peer) {
 	if srv.newPeerHook != nil {
 		srv.newPeerHook(p)

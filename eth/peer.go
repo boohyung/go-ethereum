@@ -150,6 +150,7 @@ func (p *peer) SendTransactions(txs types.Transactions) error {
 
 // SendNewBlockHashes announces the availability of a number of blocks through
 // a hash notification.
+// SendNewBlockHashes함수는 해시 알람을 통해 사용가능한 블록의 수를 어나운스 한다
 func (p *peer) SendNewBlockHashes(hashes []common.Hash, numbers []uint64) error {
 	for _, hash := range hashes {
 		p.knownBlocks.Add(hash)
@@ -325,6 +326,8 @@ func newPeerSet() *peerSet {
 
 // Register injects a new peer into the working set, or returns an error if the
 // peer is already known.
+// Register함수는 새로운 피어를 워킹셋에 추가하거나, 
+// 이미 알려진 피어라면 에러를 반환한다
 func (ps *peerSet) Register(p *peer) error {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
