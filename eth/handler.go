@@ -657,6 +657,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		request.Block.ReceivedFrom = p
 
 		// Mark the peer as owning the block and schedule it for import
+		// 패쳐를 이용하여 블록을 import하기위한 enqueue
 		p.MarkBlock(request.Block.Hash())
 		pm.fetcher.Enqueue(p.id, request.Block)
 
@@ -713,6 +714,7 @@ func (pm *ProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
 	peers := pm.peers.PeersWithoutBlock(hash)
 
 	// If propagation is requested, send to a subset of the peer
+	// 프로파게이션이 요구되면 피어의 일부에게 전송한다
 	if propagate {
 		// Calculate the TD of the block (it's not imported yet, so block.Td is not valid)
 		var td *big.Int
@@ -731,6 +733,7 @@ func (pm *ProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
 		return
 	}
 	// Otherwise if the block is indeed in out own chain, announce it
+	// 만약 블록이 내부체인에서 발생했다면 어나운스한다.
 	if pm.blockchain.HasBlock(hash, block.NumberU64()) {
 		for _, peer := range peers {
 			peer.SendNewBlockHashes([]common.Hash{hash}, []uint64{block.NumberU64()})

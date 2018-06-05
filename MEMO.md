@@ -149,3 +149,52 @@ downloader의 synchronise -> syncwithpeer -> spawnSync함수를 호춣하면
 등록된 헤더패쳐, 바디패쳐, 영수증 페쳐, 헤더 프로세서가 동시에 실행되면서 
 현재 내가 소유한 다음 블록부터 상대방의 체인을 읽어서 체인 DB에 저장하기 시작한다 
 
+
+
+//마이닝의 시작과 블록이벤트 그리고 블록의 전파
+geth -> StartNode -> Node.Start : cmd/geth/main 
+Start -> p2p.Server -> eth Start (service.start) : node/node.go 
+Start -> protoclManager.Start: eth/backend.go
+Start: eth/handler.go
+->txBroadcastLoop(pm.txsCh) 
+-> MinedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
+-> minedBroadcastLoop(core.NewMinedBlockSub) 
+->syncer
+->txsyncLoop
+
+순서로 호출이 되는데 이중 
+minedBroadcastLoop 함수에서
+MinedBlockSub 채널에서 core.NewMinedBlockEvent가 발생한경우 
+BroadcastBlock 
+-> SendNewBlock(NewBlockMsg): eth/peer.go
+-> SendNewBlockHashes(NewBlockHashesMsg): eth/peer.go 
+
+//core.NewMinedBlockEvent 발생위치는 프로토콜 매니져 실행후
+New -> miner.New : eth/backend.go 
+New -> newWorker :miner/miner.go
+newWorker -> worker.wait -> self.mux.Post(core.NewMinedBlockEvent) : miner/worker.go
+이다
+
+즉 마이닝을 실행한후 블록이 찾아지면 브로드캐스팅하는 것.
+
+
+브로드 캐스팅을 수신한 피어의 프로토콜매니저의 루프인 handleMsg에서 해당메시지를 수신하고
+해당블록을 import하기위해 패쳐에 스케쥴을 enqueue한다 : eth/fetcher/fetcher.go
+NewBlockHashesMsg 역시 같은 루프에서 처리하며
+패쳐의 notify기능을 이용하여 announce된 블록에 등록 한다
+
+차후 패쳐의 메인루프에서 어나운스된 블록중 적절한 블록을 골라 체인에 삽입하고
+매니저의 BroadcastBlock을 호출하면 이블록을 모르는 또다른 피어에게 전달됨
+(p2p의 전파과정)
+
+
+
+
+
+StartNode-> StartMining: cmd/geth/main.go 
+StartMining -> miner.Start : eth/backend.go
+minder.Start -> worker.start :miner/miner.go
+worker.start -> agent.start : miner/worker.go 
+여기서 agent는 ethash를 풀기위해 등록된 cpu agent임
+
+
