@@ -522,6 +522,8 @@ func (self *StateDB) Snapshot() int {
 }
 
 // RevertToSnapshot reverts all state changes made since the given revision.
+// 이함수는 모든 스테이트를 주어진 리비전으로 되돌려 놓는다
+// 블록에 들어가는 트렌젝션 리스트를 하나하나 실행하는 과정에서 에러가 날경우
 func (self *StateDB) RevertToSnapshot(revid int) {
 	// Find the snapshot in the stack of valid snapshots.
 	idx := sort.Search(len(self.validRevisions), func(i int) bool {

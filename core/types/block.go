@@ -197,6 +197,11 @@ type storageblock struct {
 // The values of TxHash, UncleHash, ReceiptHash and Bloom in header
 // are ignored and set to values derived from the given txs, uncles
 // and receipts.
+// 이함수는 새블록을 생성한다. 입력데이터는 복사되기때문에  
+// 헤더와 필드데이터의 변화는 블록에 반영되지 않는다
+// 헤더의 TxHash와 엉클해시, 영수증해시와 블룸의 값은 무시되며
+// 주어진 트렌젝션과 엉클과 영수증에 의해 유도된 값이 저장된다
+
 func NewBlock(header *Header, txs []*Transaction, uncles []*Header, receipts []*Receipt) *Block {
 	b := &Block{header: CopyHeader(header), td: new(big.Int)}
 

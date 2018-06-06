@@ -1651,6 +1651,7 @@ func (bc *BlockChain) SubscribeChainHeadEvent(ch chan<- ChainHeadEvent) event.Su
 }
 
 // SubscribeChainSideEvent registers a subscription of ChainSideEvent.
+// ChainSideEvent는 엉클블락의 발생가능성을 체크하기위한 이벤트이다
 func (bc *BlockChain) SubscribeChainSideEvent(ch chan<- ChainSideEvent) event.Subscription {
 	return bc.scope.Track(bc.chainSideFeed.Subscribe(ch))
 }

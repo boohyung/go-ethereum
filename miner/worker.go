@@ -324,6 +324,7 @@ func (self *worker) wait() {
 	for {
 		mustCommitNewWork := true
 		// cpu agent 생성때 등록했던 채널
+		// 마이닝을 통해 nonce를 찾은 완벽한 블록이 recv 채널을 통해 전달됨 
 		for result := range self.recv {
 			atomic.AddInt32(&self.atWork, -1)
 
@@ -335,6 +336,7 @@ func (self *worker) wait() {
 
 			// Update the block hash in all logs since it is now available and not when the
 			// receipt/log of individual transactions were created.
+			//
 			for _, r := range work.receipts {
 				for _, l := range r.Logs {
 					l.BlockHash = block.Hash()

@@ -152,49 +152,109 @@ downloader의 synchronise -> syncwithpeer -> spawnSync함수를 호춣하면
 
 
 //마이닝의 시작과 블록이벤트 그리고 블록의 전파
-geth -> StartNode -> Node.Start : cmd/geth/main 
-Start -> p2p.Server -> eth Start (service.start) : node/node.go 
-Start -> protoclManager.Start: eth/backend.go
-Start: eth/handler.go
-->txBroadcastLoop(pm.txsCh) 
--> MinedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
--> minedBroadcastLoop(core.NewMinedBlockSub) 
-->syncer
-->txsyncLoop
+eth의 StartNode 로부터 시작하여 이더리움 프로토콜이 시작하게 되면
+크게 4개의 고루틴이 시작되는 데 그 중 하나가 MinedBroadcastLoop이다
 
-순서로 호출이 되는데 이중 
-minedBroadcastLoop 함수에서
-MinedBlockSub 채널에서 core.NewMinedBlockEvent가 발생한경우 
-BroadcastBlock 
--> SendNewBlock(NewBlockMsg): eth/peer.go
--> SendNewBlockHashes(NewBlockHashesMsg): eth/peer.go 
+geth -> StartNode -> Node.Start : cmd/geth/main Start -> p2p.Server -> eth Start (service.start) : node/node.go Start -> protoclManager.Start: eth/backend.go Start: eth/handler.go ->txBroadcastLoop(pm.txsCh) -> MinedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{}) -> minedBroadcastLoop(core.NewMinedBlockSub) ->syncer ->txsyncLoop
 
-//core.NewMinedBlockEvent 발생위치는 프로토콜 매니져 실행후
-New -> miner.New : eth/backend.go 
-New -> newWorker :miner/miner.go
-newWorker -> worker.wait -> self.mux.Post(core.NewMinedBlockEvent) : miner/worker.go
-이다
+minedBroadcastLoop 함수안에서는
+구독한 MinedBlockSub 채널에서 core.NewMinedBlockEvent가 발생하면
+해당블록을 브로드캐스팅하도록 구성되어 있다
+
+BroadcastBlock -> SendNewBlock(NewBlockMsg): eth/peer.go -> SendNewBlockHashes(NewBlockHashesMsg): eth/peer.go
+
+core.NewMinedBlockEvent는 프로토콜 매니져 이후 실행되는 마이닝 루틴에서
+
+StartNode-> StartMining: cmd/geth/main.go StartMining -> miner.Start : eth/backend.go minder.Start -> worker.start :miner/miner.go worker.start -> agent.start : miner/worker.go 여기서 agent는 ethash를 풀기위해 등록된 cpu agent임
+
+워커가 블록을 발견했을 경우 노티파이 채널을 통해 먹스로 해당 이벤트를 포스팅하게된다
+
+New -> miner.New : eth/backend.go New -> newWorker :miner/miner.go newWorker -> worker.wait -> self.mux.Post(core.NewMinedBlockEvent) : miner/worker.go
 
 즉 마이닝을 실행한후 블록이 찾아지면 브로드캐스팅하는 것.
+브로드 캐스팅을 수신한 피어의 프로토콜 매니져는
+루프인 handleMsg에서 NewBlockMsg 수신하고 해당블록을 import하기위해
+패쳐에 스케쥴을 enqueue한다 : eth/fetcher/fetcher.go
 
-
-브로드 캐스팅을 수신한 피어의 프로토콜매니저의 루프인 handleMsg에서 해당메시지를 수신하고
-해당블록을 import하기위해 패쳐에 스케쥴을 enqueue한다 : eth/fetcher/fetcher.go
 NewBlockHashesMsg 역시 같은 루프에서 처리하며
-패쳐의 notify기능을 이용하여 announce된 블록에 등록 한다
+패쳐의 notify기능을 이용하여 announce된 블록리스트에 등록 한다
 
 차후 패쳐의 메인루프에서 어나운스된 블록중 적절한 블록을 골라 체인에 삽입하고
-매니저의 BroadcastBlock을 호출하면 이블록을 모르는 또다른 피어에게 전달됨
-(p2p의 전파과정)
+매니저의 BroadcastBlock을 또다시 호출하게 됨으로서 처음 노드가 생성한 블록을 모르는
+또다른 피어에게 해당 블록이 전달되게 된다
+
+(A-B-C 형태로만 연결된 네트워크에서 A가 블록을 마이닝 한 경우 B에 전파되고,
+B의 체인에 해당 블록이 삽입되면서 C로 브로드캐스팅되는 효과)
+
+
+
+
+//마이닝 - 트렌젝션이 풀에서 블록에 포함되기 까지
+
+eth.New->miner.New: eth/backend.go
+New -> newWorker: miner/miner.go
+newWorker: miner/worker.go
+
+-> commitNewWork
+이함수는 블록을 생성한다. 
+먼저 새로운 헤더를 하나 생성한후 부모의 블록번호로 부터 해시정보를 얻어와 채우고
+체인정보를 기반으로 난이도 필드를 초기화 한다
+
+-> self.eth.TxPool().Pending()
+-> types.NewTransactionsByPriceAndNonce(self.current.signer, pending) : core/types/transaction.go
+트렌젝션풀에서는 트렌젝션을 2가지로 분류한다
+pending: 현재 처리가능한 트렌젝션들
+queue: 풀에 큐잉은 되었지만 처리가 불가능한 트렌젝션 (현제 체인 스테이트에서는 실행할수가 없어서)
+이중 펜딩된 트렌젝션들을 가져와서 가격을 기준으로 정렬한다
+이유는 블록에 포함시킬 트렌젝션들이 비싸야 채굴했을때 수익을 더 크게 가져갈수 있기 때문이다
+(블록채굴 보상 + 트렌젝션에서 사용된 수수료)
+
+-> commitTransactions -> commitTransaction 
+-> ApplyTransaction: core/state_processor.go
+트렌젝션을 하나하나 실행한다. 그리고 실행에 따른 스테이트를 DB에 업데이트 한다
+또한 해당 트렌젝션에 대한 영수증을 만든다
+트렌젝션이 실패할경우 검증을 시작하기 직전의 snapshot으로 돌려놓는다 
+모든 트렌젝션의 실행이 완료될경우 mux.Post(core.PendingStateEvent{})를 호출한다
+
+-> self.engine.Finalize: consensus/ethash/consensus.go
+헤더의 루트를 완성하고 주어진 헤더 + 트렌젝션 + 엉클정보 + 영수증으로
+블록을 만든다. 생성한 블록을 마이너 에이전트에게 전달한다
+
+mine: miner.agent.go
+에이전트는 블록이 담긴 워크를 마이닝하기 시작한다
+self.engine.Seal: consensus/ethash/sealer.go 
+ethash.mine
+함수를 호출하게 되면 우리가 아는 pow기반으로 nonce를 찾기 시작한다.
+논스를 찾았다면, 해당 결과를 worker 채널로 전송한다.
+
+miner.wait에서 결과를 받으면
+블록의 해시를 영수증에 업데이트 하고
+self.chain.WriteBlockWithState 함수를 통해 체인에 해당 블록을 등록한다
+그리고 나서 self.mux.Post(core.NewMinedBlockEvent{Block: block})
+를 통해 블록을 브로드캐스팅한다 
+self.chain.PostChainEvents(events, logs)
+
+self.unconfirmed.Insert(block.NumberU64(), block.Hash())
+해당블록을 unconfirmed 블록 리스트에 저장한다
+unconfirmed란 아직 캐노니컬 체인에 등록되지 못한 블록들을 뜻한다
+블록들은 unconfirmed상태에 존재하다가, 시간이지나면 miner.shift함수에 의해
+제거된다 (이 schem은 유저가 지금까지 마이닝된 블록이 확률상
+캐노니컬 채널에 등록될 확률이 높음을 알려줌으로서 
+실제 채널에 등록되기전에 다른일을 할수있게 해준다)
 
 
 
 
 
-StartNode-> StartMining: cmd/geth/main.go 
-StartMining -> miner.Start : eth/backend.go
-minder.Start -> worker.start :miner/miner.go
-worker.start -> agent.start : miner/worker.go 
-여기서 agent는 ethash를 풀기위해 등록된 cpu agent임
+
+
+
+
+
+
+
+
+
+
 
 
