@@ -44,6 +44,7 @@ const (
 
 // PeerInfo represents a short summary of the Ethereum sub-protocol metadata known
 // about a connected peer.
+// 이더리움 서브 프로토콜의 메타데이터에 대한 짧은 요약을 제공한다
 type PeerInfo struct {
 	Version    int      `json:"version"`    // Ethereum protocol version negotiated
 	Difficulty *big.Int `json:"difficulty"` // Total difficulty of the peer's blockchain

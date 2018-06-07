@@ -80,6 +80,7 @@ type ChainIndexerChain interface {
 type ChainIndexer struct {
 	chainDb  ethdb.Database      // Chain database to index the data from
 	indexDb  ethdb.Database      // Prefixed table-view of the db to write index metadata into
+	// 인덱스 데이터를 생성하는 백그라운드 프로세서
 	backend  ChainIndexerBackend // Background processor generating the index data content
 	children []*ChainIndexer     // Child indexers to cascade chain updates to
 
@@ -191,7 +192,7 @@ func (c *ChainIndexer) Close() error {
 // started for the outermost indexer to push chain head events into a processing
 // queue.
 //이벤트 루프는 선택적이고 부수적인 인덱서의 이벤트 루프로서
-// 체인 헤드 이벤트를 외부 인덱서들의 프로세싱큐에 넣기 위해서 시작된다.
+// 체인 헤드 이벤트를 외부 인덱서들이 프로세싱큐에 넣기 위해서 시작된다.
 func (c *ChainIndexer) eventLoop(currentHeader *types.Header, events chan ChainEvent, sub event.Subscription) {
 	// Mark the chain indexer as active, requiring an additional teardown
 	atomic.StoreUint32(&c.active, 1)
@@ -238,6 +239,7 @@ func (c *ChainIndexer) eventLoop(currentHeader *types.Header, events chan ChainE
 }
 
 // newHead notifies the indexer about new chain heads and/or reorgs.
+// 이 함수는 새 체인 헤드 혹은 재구성에 인덱서에게 알린다
 func (c *ChainIndexer) newHead(head uint64, reorg bool) {
 	c.lock.Lock()
 	defer c.lock.Unlock()

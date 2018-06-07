@@ -43,6 +43,7 @@ type txsync struct {
 }
 
 // syncTransactions starts sending all currently pending transactions to the given peer.
+// 이 함수는 주어진 피어들에게 현재 펜딩중인 트렌젝션을 모두 전송한다
 func (pm *ProtocolManager) syncTransactions(p *peer) {
 	var txs types.Transactions
 	pending, _ := pm.txpool.Pending()

@@ -54,6 +54,10 @@ func NewStateProcessor(config *params.ChainConfig, bc *BlockChain, engine consen
 // Process returns the receipts and logs accumulated during the process and
 // returns the amount of gas that was used in the process. If any of the
 // transactions failed to execute due to insufficient gas it will return an error.
+// 이 함수는 이더리움 룰에 따라 state db를 이용한 트렌젝션 메시지 실행과
+// 실행에 따른 코인베이스의 보상과 엉클블록을 처리한 것에 대한 보상을 처리한다
+// 이 하무는 영수증과 프로세스에 사용된 가스사용량의 누적로그를 리턴한다
+// 가스때문에 실행에 실패한 트렌젝션은 에러를 리턴한다
 func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg vm.Config) (types.Receipts, []*types.Log, uint64, error) {
 	var (
 		receipts types.Receipts

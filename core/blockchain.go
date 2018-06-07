@@ -15,6 +15,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package core implements the Ethereum consensus protocol.
+// 코어패키지는 이더리움 합의 프로토콜을 구현한다
 package core
 
 import (

@@ -15,6 +15,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package ethclient provides a client for the Ethereum RPC API.
+// 이 패키지는 이더리움 RPC API를 위한 클라이언트를 제공한다
 package ethclient
 
 import (

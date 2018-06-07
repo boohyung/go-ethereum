@@ -82,7 +82,7 @@ type rlpx struct {
 	fd net.Conn
 
 	rmu, wmu sync.Mutex
-	rw       *rlpxFrameRW
+	rw       *rlpxFrameRW //실제 p2p전송이 일어나는 RW
 }
 
 func newRLPX(fd net.Conn) transport {

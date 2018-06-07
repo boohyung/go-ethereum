@@ -18,6 +18,7 @@
 //
 // Keys are stored as encrypted JSON files according to the Web3 Secret Storage specification.
 // See https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition for more information.
+// 키들은 web3 비밀지갑저장 스펙으로 암호화된 json파일로 저장된다 
 package keystore
 
 import (
@@ -272,6 +273,7 @@ func (ks *KeyStore) Delete(a accounts.Account, passphrase string) error {
 
 // SignHash calculates a ECDSA signature for the given hash. The produced
 // signature is in the [R || S || V] format where V is 0 or 1.
+// SignHash 함수는 주어진 해시에 대해 ECDSA 사인을 계산한다
 func (ks *KeyStore) SignHash(a accounts.Account, hash []byte) ([]byte, error) {
 	// Look up the key to sign with and abort if it cannot be found
 	ks.mu.RLock()
@@ -286,6 +288,7 @@ func (ks *KeyStore) SignHash(a accounts.Account, hash []byte) ([]byte, error) {
 }
 
 // SignTx signs the given transaction with the requested account.
+// SignTx 함수는 요구된 계정으로 주어진 트렌젝션에 사인한다
 func (ks *KeyStore) SignTx(a accounts.Account, tx *types.Transaction, chainID *big.Int) (*types.Transaction, error) {
 	// Look up the key to sign with and abort if it cannot be found
 	ks.mu.RLock()
@@ -295,7 +298,7 @@ func (ks *KeyStore) SignTx(a accounts.Account, tx *types.Transaction, chainID *b
 	if !found {
 		return nil, ErrLocked
 	}
-	// Depending on the presence of the chain ID, sign with EIP155 or homestead
+	// Depending on the presence of the chain ID, sign with EIP156 or homestead
 	if chainID != nil {
 		return types.SignTx(tx, types.NewEIP155Signer(chainID), unlockedKey.PrivateKey)
 	}

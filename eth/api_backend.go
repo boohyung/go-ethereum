@@ -38,6 +38,7 @@ import (
 )
 
 // EthAPIBackend implements ethapi.Backend for full nodes
+// full node 들을 위한 ethapi.backend를 구현한다
 type EthAPIBackend struct {
 	eth *Ethereum
 	gpo *gasprice.Oracle

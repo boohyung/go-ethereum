@@ -15,6 +15,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package eth implements the Ethereum protocol.
+// eth 패키지는 이더리움 프로토콜을 구현한다
 package eth
 
 import (
@@ -59,6 +60,7 @@ type LesServer interface {
 }
 
 // Ethereum implements the Ethereum full node service.
+// Ethereum구조체는 이더리움 풀노드 서비스를 구현한다
 type Ethereum struct {
 	config      *Config
 	chainConfig *params.ChainConfig
